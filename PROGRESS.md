@@ -89,7 +89,7 @@ app/inspect_data.py      [XONG]     Giai đoạn 1 — verify: order_status 8 en
 app/load_data.py         [MỘT PHẦN] Giai đoạn 1 — TABLE_NAME_MAP + DATE_COLUMN_BY_TABLE đã điền và verify; get_engine/create_schema/load_csv_to_table/verify_row_counts/main còn NotImplementedError, TẠM HOÃN vì cần Postgres thật để viết+test có ý nghĩa
 app/schema_context.py    [MỘT PHẦN] Giai đoạn 2 — TABLE_DESCRIPTIONS (9 bảng)/NON_UNIQUE_PARENT_KEYS/NULLABLE_CHILD_KEYS/build_documentation_chunks() đã viết+verify (11 chunks); generate_ddl(engine) còn NotImplementedError, TẠM HOÃN vì cần Postgres
 app/vector_store.py      [SKELETON] Giai đoạn 3
-app/build_prompt.py      [SKELETON] Giai đoạn 4
+app/build_prompt.py      [MỘT PHẦN] Giai đoạn 4 — build_messages() đã viết + tự test bằng context giả (2 messages: system chứa context, user chứa câu hỏi); ⚠️ đơn giản hoá tạm thời — hiện nhồi cả DDL/doc/few-shot examples chung 1 khối vào system message vì vector_store.retrieve() (Giai đoạn 3) chưa xây nên chưa tách riêng được few-shot ra user message như ghi chú "đặt gần câu hỏi thật" ở Giai đoạn 4 — cần xem lại khi Giai đoạn 3 xong
 app/llm_sql.py           [SKELETON] Giai đoạn 4
 app/sql_executor.py      [MỘT PHẦN] Giai đoạn 5 — _is_select_only() + _is_single_statement() (lớp 1 & 3) đã viết + tự test (4/4 case, kể cả case biên "SELECT 1;;" -> 2 statement); lớp 2 (role read-only) + run_sql_safe() còn NotImplementedError, TẠM HOÃN vì cần Postgres thật
 app/self_correct.py      [SKELETON] Giai đoạn 6
