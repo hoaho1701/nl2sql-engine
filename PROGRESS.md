@@ -91,7 +91,7 @@ app/schema_context.py    [MỘT PHẦN] Giai đoạn 2 — TABLE_DESCRIPTIONS (9
 app/vector_store.py      [SKELETON] Giai đoạn 3
 app/build_prompt.py      [SKELETON] Giai đoạn 4
 app/llm_sql.py           [SKELETON] Giai đoạn 4
-app/sql_executor.py      [SKELETON] Giai đoạn 5
+app/sql_executor.py      [MỘT PHẦN] Giai đoạn 5 — _is_select_only() + _is_single_statement() (lớp 1 & 3) đã viết + tự test (4/4 case, kể cả case biên "SELECT 1;;" -> 2 statement); lớp 2 (role read-only) + run_sql_safe() còn NotImplementedError, TẠM HOÃN vì cần Postgres thật
 app/self_correct.py      [SKELETON] Giai đoạn 6
 app/eval_test_set.py     [MỘT PHẦN] Giai đoạn 7 — 18 case (question, gold_sql) đã viết, phủ đủ 12 dạng câu hỏi trong checklist; đã tự verify bằng pandas cho các case phức tạp (top category, top seller, HAVING, date comparison, fan-out dedup, 3+ table join) trước khi ghi làm đáp án — CHƯA chạy thử qua Postgres thật (cần hạ tầng)
 app/evaluate.py          [SKELETON] Giai đoạn 7
