@@ -49,7 +49,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 | 8 | Đóng gói: FastAPI + React + docker-compose | CHƯA BẮT ĐẦU | — |
 | 9 | Khác biệt hoá / nâng cao (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
 
-**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Trong lúc chờ, tiếp tục phần Giai đoạn 1 không phụ thuộc hạ tầng: viết `app/load_data.py` (`TABLE_NAME_MAP`, `DATE_COLUMN_BY_TABLE`, DDL) dựa trên kết quả đã có từ `app/inspect_data.py`.
+**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Phần còn lại của `app/load_data.py` (`get_engine`, `create_schema`, `load_csv_to_table`, `verify_row_counts`, `main`) cũng **tạm hoãn** vì cần Postgres thật mới viết+test có ý nghĩa. Việc infra-độc-lập tiếp theo còn lại: `app/schema_context.py` — `TABLE_DESCRIPTIONS`/`NON_UNIQUE_PARENT_KEYS`/`NULLABLE_CHILD_KEYS` có thể viết ngay dựa trên kết quả `app/inspect_data.py` (không cần Postgres, chỉ `generate_ddl()` mới cần).
 
 ---
 
@@ -77,7 +77,7 @@ requirements.txt                [ĐÃ TẠO]   liệt kê dep theo từng giai �
 docker-compose.yml       [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
 app/__init__.py          [ĐÃ TẠO]   trống, chỉ để app/ là 1 package Python thật
 app/inspect_data.py      [XONG]     Giai đoạn 1 — verify: order_status 8 enum, payment_type 5, review_score 5, geolocation_zip_code_prefix 19,015 unique/1,000,163 dòng (bẫy fan-out xác nhận)
-app/load_data.py         [SKELETON] Giai đoạn 1
+app/load_data.py         [MỘT PHẦN] Giai đoạn 1 — TABLE_NAME_MAP + DATE_COLUMN_BY_TABLE đã điền và verify; get_engine/create_schema/load_csv_to_table/verify_row_counts/main còn NotImplementedError, TẠM HOÃN vì cần Postgres thật để viết+test có ý nghĩa
 app/schema_context.py    [SKELETON] Giai đoạn 2
 app/vector_store.py      [SKELETON] Giai đoạn 3
 app/build_prompt.py      [SKELETON] Giai đoạn 4
