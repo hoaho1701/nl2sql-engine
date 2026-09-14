@@ -31,6 +31,7 @@ Xây **1 sản phẩm Text-to-SQL hoàn chỉnh**, khởi động từ **2026-09
 - Toàn bộ tech stack và dịch vụ phải **miễn phí ($0), self-hosted, không giới hạn số lần gọi** — không dùng cloud API trả phí hoặc free-tier giới hạn (xem "Quyết định tech stack" ở Giai đoạn 0).
 - Có tối thiểu 2-3 tính năng khác biệt so với vanna mặc định (xem Giai đoạn 9) — sản phẩm này không phải bản copy.
 - Train set (dữ liệu nạp vào vector store) và eval set (đo độ chính xác) phải tách biệt hoàn toàn, không rò rỉ dữ liệu giữa hai bên.
+- **Thể hiện rõ năng lực MLOps + backend + frontend**, không chỉ thuần AI/RAG — lý do: mục tiêu nghề nghiệp là portfolio phục vụ xin việc, phạm vi rộng hơn 1 vai trò AI/LLM engineer thuần tuý. Cụ thể: CI pipeline tự động (Giai đoạn 8), experiment log có số liệu theo thời gian (Giai đoạn 7), dashboard observability (Giai đoạn 9), API backend chuẩn REST (Giai đoạn 8), UI React tối giản nhưng thật (Giai đoạn 8) — đây là lý do Docker/Postgres/React KHÔNG bị cắt bớt dù tốn thời gian hơn SQLite/Streamlit.
 
 ## Lộ trình tổng thể (10 giai đoạn, đánh số 0-9)
 
@@ -40,14 +41,14 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 |---|---|---|---|
 | 0 | Môi trường & hạ tầng (Docker, Postgres, Ollama, Chroma) | **CHƯA BẮT ĐẦU** | — |
 | 1 | Nền dữ liệu (tải + load Olist → Postgres, FK thật) | **ĐANG LÀM** | 2026-09-14 |
-| 2 | Schema metadata layer (DDL + mô tả + quan hệ + cảnh báo bẫy) | CHƯA BẮT ĐẦU | — |
+| 2 | Schema metadata layer (DDL + mô tả + quan hệ + cảnh báo bẫy) | **ĐANG LÀM** | 2026-09-14 |
 | 3 | Vector store & training data cho RAG (Chroma + embedding) | CHƯA BẮT ĐẦU | — |
 | 4 | Tích hợp LLM với RAG prompt động (Ollama) | CHƯA BẮT ĐẦU | — |
 | 5 | Thực thi SQL an toàn trên Postgres | CHƯA BẮT ĐẦU | — |
 | 6 | Vòng tự sửa lỗi (self-correction loop) | CHƯA BẮT ĐẦU | — |
-| 7 | Đánh giá độ chính xác (train/eval set tách biệt) | CHƯA BẮT ĐẦU | — |
-| 8 | Đóng gói: FastAPI + React + docker-compose | CHƯA BẮT ĐẦU | — |
-| 9 | Khác biệt hoá / nâng cao (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
+| 7 | Đánh giá độ chính xác (train/eval set tách biệt, experiment log) | CHƯA BẮT ĐẦU | — |
+| 8 | Đóng gói: FastAPI + React + docker-compose + CI/CD | CHƯA BẮT ĐẦU | — |
+| 9 | Khác biệt hoá AI + MLOps observability (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
 
 **Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và phần Postgres của `app/load_data.py`/`app/schema_context.py` (`get_engine`, `create_schema`, `load_csv_to_table`, `verify_row_counts`, `main`, `generate_ddl`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Việc infra-độc-lập còn lại: bắt đầu Giai đoạn 7 — viết `app/eval_test_set.py` (tối thiểu 15 case `question`/`gold_sql`, checklist dạng câu hỏi cần phủ đã ghi ở Giai đoạn 7) — viết được ngay, chỉ chạy thử `gold_sql` thật (so với Postgres) mới cần hạ tầng, còn viết câu hỏi + SQL dự kiến thì không.
 
@@ -92,6 +93,9 @@ app/eval_test_set.py     [SKELETON] Giai đoạn 7
 app/evaluate.py          [SKELETON] Giai đoạn 7
 app/api.py               [SKELETON] Giai đoạn 8
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
+tests/                   [CHƯA TẠO] Giai đoạn 8 — unit test cho phần logic thuần Python (không cần LLM/Postgres), chạy trong CI
+.github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
+results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 ```
 
 ---
@@ -303,20 +307,22 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 - **Cẩn thận: ngay cả `gold_sql` tự viết tay cũng có thể dính bẫy fan-out** (vd JOIN trực tiếp 2 bảng con của cùng 1 order mà không dedupe) — luôn tự verify `gold_sql` bằng cách đếm số dòng trước/sau JOIN so với số lượng thực thể gốc, không mặc định `gold_sql` đúng chỉ vì tự viết.
 - Lỗi thường gặp khi viết `evaluate.py`, nên tự cảnh giác: biến cờ đúng/sai chỉ gán trong nhánh `try` (gây `UnboundLocalError` nếu case đầu tiên đã lỗi), khởi tạo/reset biến cờ sai vị trí (đặt ngoài vòng `for` thay vì mỗi vòng lặp, khiến giá trị "rỉ" từ case trước sang case sau), gõ nhầm tên biến khi cộng dồn bộ đếm tổng — nên tự viết test bằng cách monkeypatch/giả lập `generate_sql`/`run_sql_safe` để bắt các lỗi này sớm, không cần chờ LLM thật chạy xong mỗi lần test.
 - Cần đo accuracy ở **2 chế độ**: (a) không dùng self-correction (chỉ 1 lần gọi LLM) và (b) có self-correction (Giai đoạn 6) — để định lượng đúng self-correction cải thiện bao nhiêu %, không chỉ cảm tính.
+- **Experiment log**: mỗi lần chạy `evaluate.py` nên tự động ghi lại 1 dòng vào file log riêng (không phải chỉ in ra màn hình rồi mất) — đây là thực hành MLOps cơ bản: mọi thay đổi (model, prompt, RAG config, có/không self-correction) đều phải có số liệu đo được, tra cứu lại được sau này, không chỉ nhớ miệng. Dữ liệu này cũng chính là nguồn cho dashboard ở Giai đoạn 9.
 
-**Tech stack**: thuần Python (`collections.Counter`), không cần thư viện mới.
+**Tech stack**: thuần Python (`collections.Counter`, `csv` built-in), không cần thư viện mới.
 
 **Việc cần làm**
 - Viết `eval_test_set.py`: tối thiểu 15 cặp `(question, gold_sql)`, phủ đủ dạng câu hỏi: đếm đơn giản, JOIN + AVG, GROUP BY + top-1, bẫy NULL (cột FK có thể NULL), bẫy fan-out (JOIN qua cột không unique), HAVING qua subquery, tổng nhiều cột, filter theo ngày, GROUP BY tìm max, so sánh 2 cột ngày, JOIN từ 3 bảng trở lên, và ít nhất vài câu trả về **nhiều dòng thật** (không chỉ 1 số/1 dòng) để test cơ chế so sánh `Counter` trên dữ liệu thật.
 - Viết `evaluate.py`: chạy `generate_sql()` + `run_sql_safe()` trên từng câu hỏi, so kết quả với gold bằng `Counter`, in báo cáo — tự test bằng monkeypatch trước khi chạy với LLM thật.
-- Chạy đo accuracy ở cả 2 chế độ (có/không self-correction), ghi lại bảng so sánh cho từng thay đổi lớn (model, prompt, self-correction...) — **mỗi lần chỉ đổi 1 biến** để biết chính xác thay đổi nào gây ra kết quả (giữ `temperature=0` khi so sánh).
+- Thêm vào `evaluate.py`: sau mỗi lần chạy, append 1 dòng vào `results/eval_log.csv` (tạo thư mục `results/` nếu chưa có) — cột gợi ý: `timestamp, config_description, model, use_self_correction, n_cases, n_correct, accuracy`. `config_description` là 1 câu ngắn tự ghi tay mô tả thay đổi lần này (vd "baseline, no RAG examples" hay "+ 20 RAG examples").
+- Chạy đo accuracy ở cả 2 chế độ (có/không self-correction), mỗi lần chạy = 1 dòng mới trong `eval_log.csv` — **mỗi lần chỉ đổi 1 biến** để biết chính xác thay đổi nào gây ra kết quả (giữ `temperature=0` khi so sánh).
 - **⚠️ Nhắc lại cảnh báo data leakage**: không thêm case nào của eval set vào vector store ở Giai đoạn 3.
 
 ---
 
-## Giai đoạn 8 — Đóng gói: FastAPI + React + docker-compose
+## Giai đoạn 8 — Đóng gói: FastAPI + React + docker-compose + CI/CD
 
-**Mục tiêu**: đóng gói backend + frontend, dùng docker-compose thật (máy hỗ trợ Docker nên không cần hoãn phần này).
+**Mục tiêu**: đóng gói backend + frontend, dùng docker-compose thật (máy hỗ trợ Docker nên không cần hoãn phần này), cộng thêm CI pipeline — mục tiêu dự án giờ không chỉ là "chạy được" mà còn phải **thể hiện được thực hành MLOps/backend/frontend rõ ràng cho mục đích portfolio** (xem "Yêu cầu bắt buộc" ở đầu file).
 
 **Khái niệm cần nắm trước khi code**
 - FastAPI tự sinh **validation + tài liệu API (Swagger UI)** dựa trên type hint Python — định nghĩa "hình dạng" dữ liệu vào/ra bằng class kế thừa `pydantic.BaseModel`, FastAPI tự kiểm tra request có đúng định dạng không (thiếu field, sai kiểu) và tự trả lỗi `422` nếu sai, không cần validate tay.
@@ -324,13 +330,17 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 - Thiết kế endpoint (`POST /query`) cần map cây exception đã xây ở Giai đoạn 5 (`UnsafeQueryError`, `QueryTimeoutError`) sang đúng HTTP status code (`400` cho SQL không hợp lệ, `408` cho timeout, `500` cho lỗi hệ thống thật).
 - **CORS**: React (dev server, thường `localhost:3000`) và FastAPI (thường `localhost:8000`) là 2 "origin" khác nhau theo trình duyệt — trình duyệt **mặc định chặn** JS gọi API từ origin khác (chính sách bảo mật, không phải bug) trừ khi FastAPI thêm `CORSMiddleware` mở quyền cho origin đó.
 - `docker-compose.yml` có thể gồm **Postgres + FastAPI backend** (2 service), nhưng **Ollama KHÔNG nên đưa vào docker-compose** — nhắc lại lý do ở Giai đoạn 0 (mất GPU passthrough nếu container hoá trên Mac) — Ollama tiếp tục chạy native, backend trong Docker gọi ra `http://host.docker.internal:11434` (cách Docker Desktop cho container gọi ra service chạy trên máy host).
+- **CI (GitHub Actions)**: 1 file YAML trong `.github/workflows/` mô tả job chạy tự động mỗi khi push/mở PR — chạy trên máy ảo tạm thời của GitHub (runner), không phải máy của bạn. **Giới hạn thật cần biết**: runner miễn phí của GitHub KHÔNG có GPU, giới hạn số phút chạy/tháng, và không có sẵn Ollama/model đã pull — nên CI **không nên** chạy lại toàn bộ `evaluate.py` (cần gọi LLM thật, tốn phút chạy + phải tải model GB mỗi lần). CI chỉ nên chạy được: (a) lint/kiểm tra cú pháp, (b) unit test cho phần logic thuần Python không cần LLM/DB thật (vd `sql_executor._is_select_only`, `_is_single_statement`, `evaluate.normalize_result`), (c) build thử Docker image để chắc chắn `docker-compose.yml` không bị hỏng. Việc đo accuracy thật (Giai đoạn 7) vẫn chạy **thủ công, local**, ghi vào `results/eval_log.csv` — không tự động hoá trong CI vì không thực tế với tài nguyên miễn phí.
+- GitHub Actions **hỗ trợ chạy 1 Postgres service container ngay trong job** (`services: postgres: image: postgres:17`) miễn phí — có thể dùng để test thật `sql_executor.py`/`load_data.py` với Postgres, không cần Ollama.
 
-**Tech stack**: FastAPI, `uvicorn[standard]`, React + Node.js/npm, docker-compose (Postgres + backend, không gồm Ollama).
+**Tech stack**: FastAPI, `uvicorn[standard]`, React + Node.js/npm, docker-compose (Postgres + backend, không gồm Ollama), GitHub Actions, `pytest` (cho unit test phần logic thuần Python).
 
 **Việc cần làm**
 - Viết `app/api.py`: endpoint `POST /query` nối `self_correct.answer_question`, map exception (`UnsafeQueryError` → 400, `QueryTimeoutError` → 408, lỗi hệ thống → 500).
-- Viết `docker-compose.yml` gồm 2 service (Postgres, backend) — backend đọc `OLLAMA_BASE_URL` qua biến môi trường trỏ `host.docker.internal`.
-- Tạo project React riêng trong `frontend/`, gọi API qua `fetch`.
+- Viết `docker-compose.yml` gồm 2 service (Postgres, backend) — backend đọc `OLLAMA_BASE_URL` qua biến môi trường trỏ `host.docker.internal`. Mục tiêu: **1 lệnh `docker compose up` chạy được toàn bộ backend + DB** (Ollama vẫn chạy native riêng).
+- Tạo project React riêng trong `frontend/`, gọi API qua `fetch`. Giữ tối giản: 1 trang chính (ô hỏi + bảng kết quả), có thể thêm 1 tab nhỏ đọc `results/eval_log.csv` (qua 1 endpoint mới) để hiển thị biểu đồ accuracy/latency theo thời gian — xem Giai đoạn 9.
+- Viết `.github/workflows/ci.yml`: job chạy lint (vd `ruff`/`flake8`) + `pytest` cho các hàm thuần Python + `docker compose build` — trigger mỗi khi push.
+- Viết vài test nhỏ trong `tests/` cho các hàm không cần LLM/Postgres thật: `sql_executor._is_select_only`, `_is_single_statement` (dùng chuỗi SQL giả), `evaluate.normalize_result` (dùng list số giả) — đây là phần CI thực sự chạy được.
 
 ---
 
@@ -338,16 +348,23 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 
 **Mục tiêu**: chọn tối thiểu 2-3 tính năng làm cho sản phẩm này **tốt hơn hoặc khác vanna ở 1 điểm cụ thể**, không chỉ là "vanna phiên bản tự build".
 
-### Đề xuất ưu tiên cao (nên làm, tận dụng trực tiếp công sức đã bỏ ra ở các giai đoạn trước)
+Chia làm 2 nhóm mục đích khác nhau: **(A) khác biệt AI/sản phẩm** — làm cho hệ thống thông minh/an toàn hơn vanna; **(B) MLOps/vận hành** — làm cho dự án thể hiện rõ năng lực MLOps/backend/frontend cho mục đích portfolio (xem "Yêu cầu bắt buộc" ở đầu file). Cả 2 nhóm đều là "nên làm", không phải 1 nhóm chính 1 nhóm phụ.
+
+### Nhóm A — Khác biệt AI/sản phẩm (so với vanna)
 
 1. **Guardrail dựa trên schema trap đã biết** — vanna KHÔNG có sẵn tính năng này. Dự án này (ở Giai đoạn 2) sẽ tự phát hiện và ghi chú các cột JOIN không unique / cột FK có thể NULL (vd `geolocation.geolocation_zip_code_prefix` không unique). Xây 1 lớp kiểm tra: nếu SQL sinh ra JOIN qua 1 cột đã biết là không unique mà không có `DISTINCT`/subquery dedupe, tự động cảnh báo hoặc tự thêm bước dedupe trước khi trả kết quả — biến đúng loại bug fan-out (vd tính trung bình review_score theo phương thức thanh toán, dễ bị nhân đôi nếu JOIN `order_payments` không dedupe khi 1 đơn có nhiều dòng thanh toán trả góp) thành 1 tính năng chủ động của hệ thống, không phải hy vọng model tự nhớ.
 2. **Active learning flywheel** — vanna yêu cầu gọi tay `vn.train()` để thêm ví dụ mới. Ở đây: khi người dùng xác nhận qua UI (nút "✅ đúng" / "❌ sai, đây mới là SQL đúng"), tự động gọi `vector_store.add_sql_example(...)` ngay lập tức — hệ thống tự cải thiện theo thời gian sử dụng thật, không cần thao tác thủ công riêng.
 3. **Giải thích SQL bằng ngôn ngữ tự nhiên** — 1 lệnh gọi LLM phụ (dùng lại model đã có, không cần model mới) diễn giải lại SQL vừa sinh ra thành câu văn thường, giúp người không biết SQL tự kiểm tra được máy có hiểu đúng ý mình không trước khi tin kết quả — tăng độ tin cậy, chi phí thêm gần như 0 vì local.
 
+### Nhóm B — MLOps / observability (mới, phục vụ mục tiêu portfolio)
+
+4. **Dashboard theo dõi accuracy/latency/retry theo thời gian** — đọc trực tiếp `results/eval_log.csv` (Giai đoạn 7) + log của `self_correct.py` (Giai đoạn 6), hiển thị trên chính trang React (Giai đoạn 8) dạng biểu đồ đơn giản (accuracy theo từng lần chạy eval, số lần retry trung bình...). Đây là bằng chứng trực quan nhất cho năng lực MLOps khi demo — nhà tuyển dụng nhìn thấy ngay "có đo lường, có theo dõi theo thời gian", không chỉ nghe kể.
+5. **CI pipeline** — đã triển khai cụ thể ở Giai đoạn 8 (`.github/workflows/ci.yml`): lint + unit test + build Docker image tự động mỗi lần push. Nhắc lại ở đây vì đây cũng là 1 "tính năng" đáng liệt kê khi viết CV, không chỉ là việc nội bộ.
+6. **1 lệnh `docker compose up` chạy được toàn bộ backend + DB** — đã làm ở Giai đoạn 8, liệt kê lại ở đây vì đây là câu chuyện "deployment" cụ thể để kể khi phỏng vấn.
+
 ### Đề xuất cân nhắc thêm (giá trị thấp hơn hoặc tốn công hơn, làm sau nếu còn thời gian)
 
 - Query cache (bảng Postgres `question → sql đã confirm đúng`, tra trước khi gọi LLM lại).
 - Multi-turn: câu hỏi follow-up tham chiếu ngữ cảnh câu trước đó.
-- Dashboard nhỏ theo dõi accuracy/latency/số lần retry theo thời gian (tận dụng log đã ghi ở Giai đoạn 6).
 
-**Việc cần làm**: chọn 2-3 mục ở nhóm "ưu tiên cao" trước, KHÔNG làm tất cả cùng lúc — mỗi tính năng nên đo tác động riêng bằng cách so accuracy trước/sau khi chỉ bật 1 tính năng đó (xem cách đo ở Giai đoạn 7), tránh gộp nhiều thay đổi rồi không biết cái nào thực sự có ích.
+**Việc cần làm**: làm cả nhóm A (chọn tối thiểu 2/3 mục) và nhóm B (cả 3 mục, vì đã triển khai sẵn ở Giai đoạn 7/8, chỉ cần nối vào dashboard) — KHÔNG làm tất cả nhóm A cùng lúc, mỗi tính năng nhóm A nên đo tác động riêng bằng cách so accuracy trước/sau khi chỉ bật 1 tính năng đó (xem cách đo ở Giai đoạn 7, ghi vào `results/eval_log.csv`), tránh gộp nhiều thay đổi rồi không biết cái nào thực sự có ích.
