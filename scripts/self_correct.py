@@ -1,12 +1,7 @@
-"""Giai đoạn 6 — vòng tự sửa lỗi (self-correction loop).
-
-Xem PROGRESS.md Giai đoạn 6: log lại từng lượt thử, giới hạn max_retries
-để tránh lặp vô hạn / chờ lâu.
-"""
+"""Self-correction loop: retry SQL generation with the execution error fed back to the LLM."""
 
 
 def answer_question(question: str, max_retries: int = 2):
-    """TODO: generate_sql(question) -> run_sql_safe(sql); nếu lỗi thực thi, gửi
-    lại (câu hỏi gốc, sql vừa sai, thông báo lỗi) cho LLM sửa, thử lại tối đa
-    max_retries lần. Log lại từng lượt (question, sql, lỗi nếu có, số lần retry)."""
+    """generate_sql -> run_sql_safe; on failure, retry with (question, bad sql, error) up to
+    max_retries times. Log each attempt."""
     raise NotImplementedError
