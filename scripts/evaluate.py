@@ -1,24 +1,16 @@
-"""Giai đoạn 7 — đo execution accuracy.
-
-So kết quả (Counter-based, KHÔNG so text SQL) — xem PROGRESS.md Giai đoạn 7
-cho các lỗi thường gặp khi viết vòng lặp này (UnboundLocalError, biến cờ
-reset sai vị trí, gõ nhầm biến đếm).
-"""
+"""Measure execution accuracy by comparing query results, not SQL text."""
 
 from collections import Counter
 
 
 def normalize_result(rows, expected_column_count: int | None = None) -> Counter:
-    """TODO: chuẩn hoá kết quả trả về (vd cắt cột thừa nếu predicted có thêm cột)
-    trước khi đưa vào Counter để so sánh."""
+    """Normalize a result set (e.g. trim extra columns) before comparison."""
     raise NotImplementedError
 
 
 def evaluate(use_self_correction: bool = False) -> None:
-    """TODO: với mỗi case trong eval_test_set.EVAL_CASES — chạy generate_sql (hoặc
-    self_correct.answer_question nếu use_self_correction=True) + run_sql_safe cho
-    cả predicted và gold_sql, so bằng Counter (qua normalize_result), in báo cáo.
-    Bọc try/except từng case — lỗi thực thi SQL predicted tính là sai, không crash."""
+    """For each case in eval_test_set.EVAL_CASES, run predicted vs gold SQL, compare via
+    Counter, and report. Catch errors per case instead of crashing."""
     raise NotImplementedError
 
 

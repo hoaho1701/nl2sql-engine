@@ -1,31 +1,25 @@
-"""Giai đoạn 2 — Schema metadata layer.
-
-Sinh DDL + mô tả nghiệp vụ + cảnh báo bẫy (fan-out, NULL) — nguyên liệu
-thô cho vector store ở Giai đoạn 3. Xem PROGRESS.md Giai đoạn 2.
-"""
+"""Generate schema DDL, business descriptions, and data-trap warnings for the RAG vector store."""
 
 
 def generate_ddl(engine) -> list[str]:
-    """TODO: dùng sqlalchemy.inspect(engine) sinh CREATE TABLE cho từng bảng, gồm FK thật."""
+    """Use sqlalchemy.inspect(engine) to generate CREATE TABLE statements, including real FKs."""
     raise NotImplementedError
 
 
 TABLE_DESCRIPTIONS = {
-    # TODO: mô tả nghiệp vụ từng bảng, liệt kê đủ giá trị enum thật (order_status,
-    # payment_type, review_score...), ghi chú ý nghĩa của NULL nếu có.
+    # TODO: business description per table, including real enum values
 }
 
 NON_UNIQUE_PARENT_KEYS = {
-    # TODO: cột JOIN không unique đã tự phát hiện bằng cách đếm cardinality
-    # (vd geolocation.geolocation_zip_code_prefix) — cảnh báo rủi ro fan-out.
+    # TODO: join columns known to be non-unique (fan-out risk)
 }
 
 NULLABLE_CHILD_KEYS = {
-    # TODO: cột FK có thể NULL — cảnh báo rủi ro INNER JOIN âm thầm loại dòng.
+    # TODO: nullable FK columns (INNER JOIN silently drops rows)
 }
 
 
 def build_documentation_chunks() -> list[str]:
-    """TODO: chuyển TABLE_DESCRIPTIONS/NON_UNIQUE_PARENT_KEYS/NULLABLE_CHILD_KEYS
-    thành list đoạn văn bản độc lập — mỗi phần tử sẽ được embed riêng ở Giai đoạn 3."""
+    """Flatten TABLE_DESCRIPTIONS / NON_UNIQUE_PARENT_KEYS / NULLABLE_CHILD_KEYS into
+    independent text chunks, each embedded separately in the vector store."""
     raise NotImplementedError
