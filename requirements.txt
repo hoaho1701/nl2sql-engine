@@ -1,0 +1,18 @@
+# Giai đoạn 1 — data loading
+sqlalchemy
+psycopg2-binary
+pandas
+python-dotenv
+
+# Giai đoạn 3 — vector store
+chromadb
+
+# Giai đoạn 4 — LLM calls (Ollama, OpenAI-compatible API)
+openai
+
+# Giai đoạn 5 — safe SQL execution
+sqlparse
+
+# Giai đoạn 8 — API
+fastapi
+uvicorn[standard]
