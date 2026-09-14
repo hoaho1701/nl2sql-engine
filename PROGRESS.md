@@ -39,7 +39,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 | # | Giai đoạn | Status | Cập nhật lần cuối |
 |---|---|---|---|
 | 0 | Môi trường & hạ tầng (Docker, Postgres, Ollama, Chroma) | **CHƯA BẮT ĐẦU** | — |
-| 1 | Nền dữ liệu (tải + load Olist → Postgres, FK thật) | CHƯA BẮT ĐẦU | — |
+| 1 | Nền dữ liệu (tải + load Olist → Postgres, FK thật) | **ĐANG LÀM** | 2026-09-14 |
 | 2 | Schema metadata layer (DDL + mô tả + quan hệ + cảnh báo bẫy) | CHƯA BẮT ĐẦU | — |
 | 3 | Vector store & training data cho RAG (Chroma + embedding) | CHƯA BẮT ĐẦU | — |
 | 4 | Tích hợp LLM với RAG prompt động (Ollama) | CHƯA BẮT ĐẦU | — |
@@ -49,7 +49,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 | 8 | Đóng gói: FastAPI + React + docker-compose | CHƯA BẮT ĐẦU | — |
 | 9 | Khác biệt hoá / nâng cao (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
 
-**Bước tiếp theo cần làm ngay**: Giai đoạn 0 — cài Docker + Ollama + Chroma, verify cả 3 chạy được trên máy M4 thật (đừng tin lý thuyết, phải tự chạy `curl`/`docker ps` để xác nhận).
+**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Trong lúc chờ, tiếp tục phần Giai đoạn 1 không phụ thuộc hạ tầng: viết `app/load_data.py` (`TABLE_NAME_MAP`, `DATE_COLUMN_BY_TABLE`, DDL) dựa trên kết quả đã có từ `app/inspect_data.py`.
 
 ---
 
@@ -57,6 +57,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 Các điểm chưa chốt, cần quyết định trong lúc làm chứ không đoán trước — cập nhật/xoá khi đã có câu trả lời:
 
+- **⚠️ Máy đang code (kiểm tra 2026-09-14) là Intel MacBook Pro cũ (macOS 12.7.5, i7-4770HQ, 16GB RAM, hostname `Hoas-MacBook-Pro-2.local`), KHÔNG phải Mac Mini M4** — toàn bộ Giai đoạn 0 (Docker Desktop ổn định, Ollama cài nhanh qua bottle ARM64, GPU Metal) giả định sai máy này. Người dùng xác nhận chưa chuyển hẳn sang M4, chủ động hoãn Giai đoạn 0 để làm phần không cần hạ tầng trước (Giai đoạn 1: khám phá + viết `load_data.py`). **Trước khi chạy bất kỳ lệnh cài đặt nào ở Giai đoạn 0 (brew install ollama, docker...), phải verify lại máy đang dùng bằng `sw_vers` + `sysctl -n machdep.cpu.brand_string` — đừng giả định đã chuyển sang M4 chỉ vì PROGRESS.md nói vậy.**
 - **Size model Ollama phù hợp RAM máy** (`qwen2.5-coder:7b` vs `14b`/`32b`) — chưa xác định, cần đo ở Giai đoạn 0 bước 3 (`sysctl hw.memsize`) rồi thử tốc độ thật trước khi chốt.
 - **Version cụ thể của Postgres/Ollama/ChromaDB/psycopg2/sqlparse** — chưa chốt, xem bảng "Version cụ thể đã cài" ở Giai đoạn 0, điền khi cài xong.
 - **`statement_timeout` mặc định cho Postgres** — con số hợp lý (vd 5s) là kinh nghiệm chung, chưa benchmark trên chính dữ liệu Olist + query 3-4 bảng JOIN thật; nên đo ở Giai đoạn 5/7 rồi mới chốt.
@@ -75,7 +76,7 @@ data/raw/*.csv                  [ĐÃ CÓ]    9 file CSV Olist — không cần 
 requirements.txt                [ĐÃ TẠO]   liệt kê dep theo từng giai đoạn
 docker-compose.yml       [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
 app/__init__.py          [ĐÃ TẠO]   trống, chỉ để app/ là 1 package Python thật
-app/inspect_data.py      [SKELETON] Giai đoạn 1
+app/inspect_data.py      [XONG]     Giai đoạn 1 — verify: order_status 8 enum, payment_type 5, review_score 5, geolocation_zip_code_prefix 19,015 unique/1,000,163 dòng (bẫy fan-out xác nhận)
 app/load_data.py         [SKELETON] Giai đoạn 1
 app/schema_context.py    [SKELETON] Giai đoạn 2
 app/vector_store.py      [SKELETON] Giai đoạn 3
