@@ -2,7 +2,7 @@
 
 > **Cách đọc file này (áp dụng cho cả AI lẫn người, kể cả khi đổi sang box chat/máy khác):**
 > 1. File này là **nhật ký trạng thái**, không phải spec cố định — phần "Lộ trình" mô tả kế hoạch, phần "Trạng thái file hiện tại" và cột **Status** trong mỗi giai đoạn mới là sự thật tại thời điểm đọc.
-> 2. **Luôn kiểm tra lại thực tế trước khi tin mô tả bên dưới**: đọc trực tiếp code trong `scripts/`, chạy `docker compose ps`, `ollama list`, `curl` các endpoint liệt kê ở Giai đoạn 0 — máy có thể đã tắt/restart từ lần làm việc trước.
+> 2. **Luôn kiểm tra lại thực tế trước khi tin mô tả bên dưới**: đọc trực tiếp code trong `app/`, chạy `docker compose ps`, `ollama list`, `curl` các endpoint liệt kê ở Giai đoạn 0 — máy có thể đã tắt/restart từ lần làm việc trước.
 > 3. Khi 1 giai đoạn hoàn tất, **cập nhật Status + ghi lại quyết định/bug đã gặp** ngay trong file này (theo đúng cấu trúc mỗi giai đoạn: Mục tiêu / Khái niệm cần nắm / Tech stack / Việc cần làm / Tại sao) trước khi kết thúc phiên làm việc — đây là cách duy nhất để 1 box chat mới "nối tiếp" được đúng ngữ cảnh.
 > 4. Người dùng muốn **tự code**, AI chỉ hướng dẫn/giải thích bản chất, không code hộ toàn bộ trừ khi được yêu cầu rõ ràng ("code hộ", "viết luôn").
 > 5. Nếu bạn là 1 box chat mới nhận file này, **hỏi lại người dùng** xem đã hoàn thành đến Giai đoạn mấy trong bảng Lộ trình bên dưới, đừng giả định.
@@ -73,19 +73,20 @@ data/raw/*.csv                  [ĐÃ CÓ]    9 file CSV Olist — không cần 
 .env / .env.example             [ĐÃ TẠO]   .env gitignored, .env.example làm template
 .gitignore                      [ĐÃ TẠO]
 requirements.txt                [ĐÃ TẠO]   liệt kê dep theo từng giai đoạn
-docker-compose.yml              [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
-scripts/inspect_data.py         [SKELETON] Giai đoạn 1
-scripts/load_data.py            [SKELETON] Giai đoạn 1
-scripts/schema_context.py       [SKELETON] Giai đoạn 2
-scripts/vector_store.py         [SKELETON] Giai đoạn 3
-scripts/build_prompt.py         [SKELETON] Giai đoạn 4
-scripts/llm_sql.py              [SKELETON] Giai đoạn 4
-scripts/sql_executor.py         [SKELETON] Giai đoạn 5
-scripts/self_correct.py         [SKELETON] Giai đoạn 6
-scripts/eval_test_set.py        [SKELETON] Giai đoạn 7
-scripts/evaluate.py             [SKELETON] Giai đoạn 7
-scripts/api.py                  [SKELETON] Giai đoạn 8
-frontend/                       [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
+docker-compose.yml       [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
+app/__init__.py          [ĐÃ TẠO]   trống, chỉ để app/ là 1 package Python thật
+app/inspect_data.py      [SKELETON] Giai đoạn 1
+app/load_data.py         [SKELETON] Giai đoạn 1
+app/schema_context.py    [SKELETON] Giai đoạn 2
+app/vector_store.py      [SKELETON] Giai đoạn 3
+app/build_prompt.py      [SKELETON] Giai đoạn 4
+app/llm_sql.py           [SKELETON] Giai đoạn 4
+app/sql_executor.py      [SKELETON] Giai đoạn 5
+app/self_correct.py      [SKELETON] Giai đoạn 6
+app/eval_test_set.py     [SKELETON] Giai đoạn 7
+app/evaluate.py          [SKELETON] Giai đoạn 7
+app/api.py               [SKELETON] Giai đoạn 8
+frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
 ```
 
 ---
@@ -216,7 +217,7 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 **Tại sao chọn Chroma thay vì FAISS**: FAISS chỉ là 1 thư viện index tìm kiếm gần đúng (ANN) thuần tuý — không tự lưu metadata, không tự persist, phải tự viết thêm lớp quản lý document/id/lưu đĩa. Ở quy mô dữ liệu dự án này (vài trăm đến vài nghìn document, không phải hàng triệu), lợi thế tốc độ của FAISS không có ý nghĩa, trong khi Chroma cho API cao cấp (add/query, tự quản lý embedding function, tự persist) — phù hợp hơn cho 1 người làm, ít thời gian.
 
 **Việc cần làm**
-- Viết `scripts/vector_store.py`: hàm khởi tạo Chroma client + 3 collection; hàm `add_ddl(text)`, `add_documentation(text)`, `add_sql_example(question, sql)`; hàm `retrieve(question, k_ddl, k_doc, k_examples)` trả về context đã ghép sẵn.
+- Viết `app/vector_store.py`: hàm khởi tạo Chroma client + 3 collection; hàm `add_ddl(text)`, `add_documentation(text)`, `add_sql_example(question, sql)`; hàm `retrieve(question, k_ddl, k_doc, k_examples)` trả về context đã ghép sẵn.
 - Chạy 1 script "seed" nạp toàn bộ output Giai đoạn 2 (DDL + documentation) vào Chroma.
 - Tự viết tối thiểu 15-20 cặp (question, SQL) làm training example (khác hẳn bộ eval sẽ viết ở Giai đoạn 7), add vào collection `sql_examples`.
 - Tự test retrieval: với 1 câu hỏi mẫu, in ra top-k kết quả, tự đọc bằng mắt xem có hợp lý không TRƯỚC KHI nối vào Giai đoạn 4.
@@ -238,8 +239,8 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 **Tech stack**: `openai` Python SDK (`pip install openai`), Ollama.
 
 **Việc cần làm**
-- Viết `scripts/build_prompt.py`: hàm nhận context đã retrieve, format thành `messages` list chuẩn OpenAI chat format.
-- Viết `scripts/llm_sql.py`: `generate_sql(question)` = `retrieve(question)` → `build_prompt(...)` → gọi Ollama → trả raw SQL text.
+- Viết `app/build_prompt.py`: hàm nhận context đã retrieve, format thành `messages` list chuẩn OpenAI chat format.
+- Viết `app/llm_sql.py`: `generate_sql(question)` = `retrieve(question)` → `build_prompt(...)` → gọi Ollama → trả raw SQL text.
 - Tự test bằng vài câu hỏi mẫu, so sánh SQL sinh ra với kỳ vọng.
 
 ---
@@ -280,7 +281,7 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 **Tech stack**: không cần thư viện mới, chỉ là logic Python nối `generate_sql` (Giai đoạn 4) + `run_sql_safe` (Giai đoạn 5).
 
 **Việc cần làm**
-- Viết `scripts/self_correct.py`: hàm `answer_question(question, max_retries=2)` bọc vòng lặp trên.
+- Viết `app/self_correct.py`: hàm `answer_question(question, max_retries=2)` bọc vòng lặp trên.
 - Tự test bằng cách cố tình cho 1 câu hỏi khó (vd 1 câu dễ khiến model nhầm `SUM` với `COUNT`, như đếm số lượng item trong 1 đơn hàng) — xem retry có tự sửa được không, ghi lại kết quả (thành công hay vẫn sai sau N lần).
 
 ---
@@ -314,7 +315,7 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 
 **Khái niệm cần nắm trước khi code**
 - FastAPI tự sinh **validation + tài liệu API (Swagger UI)** dựa trên type hint Python — định nghĩa "hình dạng" dữ liệu vào/ra bằng class kế thừa `pydantic.BaseModel`, FastAPI tự kiểm tra request có đúng định dạng không (thiếu field, sai kiểu) và tự trả lỗi `422` nếu sai, không cần validate tay.
-- FastAPI (framework) và Uvicorn (server) là 2 thứ khác nhau: `FastAPI()` chỉ tạo ra 1 "app object" mô tả route, **không tự chạy, không tự lắng nghe port** — cần Uvicorn (ASGI server) để thực sự chạy nó (`uvicorn scripts.api:app --reload`).
+- FastAPI (framework) và Uvicorn (server) là 2 thứ khác nhau: `FastAPI()` chỉ tạo ra 1 "app object" mô tả route, **không tự chạy, không tự lắng nghe port** — cần Uvicorn (ASGI server) để thực sự chạy nó (`uvicorn app.api:app --reload`).
 - Thiết kế endpoint (`POST /query`) cần map cây exception đã xây ở Giai đoạn 5 (`UnsafeQueryError`, `QueryTimeoutError`) sang đúng HTTP status code (`400` cho SQL không hợp lệ, `408` cho timeout, `500` cho lỗi hệ thống thật).
 - **CORS**: React (dev server, thường `localhost:3000`) và FastAPI (thường `localhost:8000`) là 2 "origin" khác nhau theo trình duyệt — trình duyệt **mặc định chặn** JS gọi API từ origin khác (chính sách bảo mật, không phải bug) trừ khi FastAPI thêm `CORSMiddleware` mở quyền cho origin đó.
 - `docker-compose.yml` có thể gồm **Postgres + FastAPI backend** (2 service), nhưng **Ollama KHÔNG nên đưa vào docker-compose** — nhắc lại lý do ở Giai đoạn 0 (mất GPU passthrough nếu container hoá trên Mac) — Ollama tiếp tục chạy native, backend trong Docker gọi ra `http://host.docker.internal:11434` (cách Docker Desktop cho container gọi ra service chạy trên máy host).
@@ -322,7 +323,7 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 **Tech stack**: FastAPI, `uvicorn[standard]`, React + Node.js/npm, docker-compose (Postgres + backend, không gồm Ollama).
 
 **Việc cần làm**
-- Viết `scripts/api.py`: endpoint `POST /query` nối `self_correct.answer_question`, map exception (`UnsafeQueryError` → 400, `QueryTimeoutError` → 408, lỗi hệ thống → 500).
+- Viết `app/api.py`: endpoint `POST /query` nối `self_correct.answer_question`, map exception (`UnsafeQueryError` → 400, `QueryTimeoutError` → 408, lỗi hệ thống → 500).
 - Viết `docker-compose.yml` gồm 2 service (Postgres, backend) — backend đọc `OLLAMA_BASE_URL` qua biến môi trường trỏ `host.docker.internal`.
 - Tạo project React riêng trong `frontend/`, gọi API qua `fetch`.
 
