@@ -1,11 +1,30 @@
 """Load the 9 Olist CSVs into Postgres with real foreign keys."""
 
 TABLE_NAME_MAP = {
-    # TODO: CSV filename -> table name
+    "olist_customers_dataset.csv": "customers",
+    "olist_geolocation_dataset.csv": "geolocation",
+    "olist_order_items_dataset.csv": "order_items",
+    "olist_order_payments_dataset.csv": "order_payments",
+    "olist_order_reviews_dataset.csv": "order_reviews",
+    "olist_orders_dataset.csv": "orders",
+    "olist_products_dataset.csv": "products",
+    "olist_sellers_dataset.csv": "sellers",
+    "product_category_name_translation.csv": "product_category_name_translation",
 }
 
+# Explicit per-table date columns, confirmed by reading inspect_data.py's sample
+# rows — not guessed from column names (e.g. order_approved_at has no "date"/
+# "timestamp" in its name but is one; other tables have none at all).
 DATE_COLUMN_BY_TABLE = {
-    # TODO: explicit date columns per table (don't guess from column names)
+    "orders": [
+        "order_purchase_timestamp",
+        "order_approved_at",
+        "order_delivered_carrier_date",
+        "order_delivered_customer_date",
+        "order_estimated_delivery_date",
+    ],
+    "order_items": ["shipping_limit_date"],
+    "order_reviews": ["review_creation_date", "review_answer_timestamp"],
 }
 
 
