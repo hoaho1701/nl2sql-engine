@@ -1,0 +1,20 @@
+# data (raw CSV reproducible from Kaggle, DB/vector store are derived artifacts)
+data/
+chroma_data/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# secrets / local env
+.env
+
+# node (frontend, Giai đoạn 8)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# os
+.DS_Store
