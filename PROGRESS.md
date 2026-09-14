@@ -66,23 +66,26 @@ Các điểm chưa chốt, cần quyết định trong lúc làm chứ không đ
 
 ## Trạng thái file hiện tại (thư mục `/Users/hoaho/Study/Code/text2sql`)
 
-```
-Chưa có file/script nào của dự án được tạo — dự án bắt đầu từ con số 0.
+Git đã init (`git init`, 3 commit đầu tiên) — mọi thay đổi từ đây có thể hoàn tác qua git. Toàn bộ file `.py` bên dưới là **skeleton** (hàm rỗng, `raise NotImplementedError` + TODO comment theo đúng "Việc cần làm" của giai đoạn tương ứng) — chưa có logic thật, đúng tinh thần "tự code, AI chỉ hướng dẫn".
 
---- Các file cần tạo theo lộ trình ---
-data/raw/*.csv                 [CHƯA TẢI]  Giai đoạn 1 — tải bộ dữ liệu Olist (Kaggle: olistbr/brazilian-ecommerce), 9 file CSV
-docker-compose.yml              [CHƯA TẠO] Giai đoạn 0
-scripts/load_data.py            [CHƯA TẠO] Giai đoạn 1
-scripts/schema_context.py       [CHƯA TẠO] Giai đoạn 2
-scripts/vector_store.py         [CHƯA TẠO] Giai đoạn 3
-scripts/build_prompt.py         [CHƯA TẠO] Giai đoạn 4
-scripts/llm_sql.py              [CHƯA TẠO] Giai đoạn 4
-scripts/sql_executor.py         [CHƯA TẠO] Giai đoạn 5
-scripts/self_correct.py         [CHƯA TẠO] Giai đoạn 6
-scripts/eval_test_set.py        [CHƯA TẠO] Giai đoạn 7
-scripts/evaluate.py             [CHƯA TẠO] Giai đoạn 7
-scripts/api.py                  [CHƯA TẠO] Giai đoạn 8
-frontend/                       [CHƯA TẠO] Giai đoạn 8
+```
+data/raw/*.csv                  [ĐÃ CÓ]    9 file CSV Olist — không cần tải lại
+.env / .env.example             [ĐÃ TẠO]   .env gitignored, .env.example làm template
+.gitignore                      [ĐÃ TẠO]
+requirements.txt                [ĐÃ TẠO]   liệt kê dep theo từng giai đoạn
+docker-compose.yml              [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
+scripts/inspect_data.py         [SKELETON] Giai đoạn 1
+scripts/load_data.py            [SKELETON] Giai đoạn 1
+scripts/schema_context.py       [SKELETON] Giai đoạn 2
+scripts/vector_store.py         [SKELETON] Giai đoạn 3
+scripts/build_prompt.py         [SKELETON] Giai đoạn 4
+scripts/llm_sql.py              [SKELETON] Giai đoạn 4
+scripts/sql_executor.py         [SKELETON] Giai đoạn 5
+scripts/self_correct.py         [SKELETON] Giai đoạn 6
+scripts/eval_test_set.py        [SKELETON] Giai đoạn 7
+scripts/evaluate.py             [SKELETON] Giai đoạn 7
+scripts/api.py                  [SKELETON] Giai đoạn 8
+frontend/                       [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
 ```
 
 ---
@@ -121,8 +124,8 @@ Mọi lựa chọn trên đều tuân thủ ràng buộc xuyên suốt dự án:
 3. Kiểm tra RAM thật của máy (`sysctl hw.memsize`) trước khi chọn kích cỡ model — model càng lớn càng chính xác nhưng cần nhiều RAM để chạy mượt trên GPU tích hợp (unified memory M4 dùng chung cho cả hệ thống lẫn model).
 4. `ollama pull qwen2.5-coder:7b` (hoặc bản lớn hơn `14b`/`32b` nếu RAM cho phép — tự cân nhắc, đừng vội chọn bản lớn nhất) — model sinh SQL.
 5. `ollama pull nomic-embed-text` — model embedding cho Giai đoạn 3.
-6. Viết `docker-compose.yml`: service Postgres 16, named volume, khai `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` qua biến môi trường (không hard-code trong file, dùng `.env` + thêm `.env` vào `.gitignore` nếu sau này dùng git).
-7. `pip install chromadb psycopg2-binary` (psycopg2 cần cho Giai đoạn 1).
+6. `docker-compose.yml`, `.env`/`.env.example`, `.gitignore`, `requirements.txt` **đã scaffold sẵn** (Postgres 17, named volume, biến môi trường qua `env_file`) — chỉ cần rà lại giá trị trong `.env` trước khi chạy thật (đổi password mặc định nếu cần).
+7. `pip install -r requirements.txt`.
 8. **Verify cả 3** trước khi qua giai đoạn sau:
    - `docker compose up -d` rồi `docker compose ps` → container Postgres `healthy`.
    - `curl http://localhost:11434/api/tags` → liệt kê đúng 2 model đã pull.
