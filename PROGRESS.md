@@ -53,7 +53,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 **Tổng ước tính**: ~43-68 giờ làm việc tập trung — tương đương khoảng 1-2 tuần nếu làm full-time, hoặc 4-8 tuần nếu làm buổi tối/cuối tuần. Không tính thời gian chờ máy M4 sẵn sàng (Giai đoạn 0 đang hoãn) hay thời gian debug phát sinh ngoài dự kiến.
 
-**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và phần Postgres của `app/load_data.py`/`app/schema_context.py` (`get_engine`, `create_schema`, `load_csv_to_table`, `verify_row_counts`, `main`, `generate_ddl`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Việc infra-độc-lập còn lại: bắt đầu Giai đoạn 7 — viết `app/eval_test_set.py` (tối thiểu 15 case `question`/`gold_sql`, checklist dạng câu hỏi cần phủ đã ghi ở Giai đoạn 7) — viết được ngay, chỉ chạy thử `gold_sql` thật (so với Postgres) mới cần hạ tầng, còn viết câu hỏi + SQL dự kiến thì không.
+**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và mọi phần cần Postgres/Ollama thật (`app/load_data.py`, `app/schema_context.py generate_ddl`, chạy thử `app/eval_test_set.py`, `app/evaluate.py`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. `app/eval_test_set.py` đã có 18 case, đã tự verify đáp án bằng pandas trực tiếp trên CSV (không phải qua Postgres) — khi có hạ tầng, việc đầu tiên nên làm là load data (Giai đoạn 1) rồi chạy thử `gold_sql` qua `psycopg2` thật để xác nhận không có lỗi cú pháp Postgres nào (pandas không bắt được lỗi cú pháp SQL).
 
 ---
 
@@ -93,7 +93,7 @@ app/build_prompt.py      [SKELETON] Giai đoạn 4
 app/llm_sql.py           [SKELETON] Giai đoạn 4
 app/sql_executor.py      [SKELETON] Giai đoạn 5
 app/self_correct.py      [SKELETON] Giai đoạn 6
-app/eval_test_set.py     [SKELETON] Giai đoạn 7
+app/eval_test_set.py     [MỘT PHẦN] Giai đoạn 7 — 18 case (question, gold_sql) đã viết, phủ đủ 12 dạng câu hỏi trong checklist; đã tự verify bằng pandas cho các case phức tạp (top category, top seller, HAVING, date comparison, fan-out dedup, 3+ table join) trước khi ghi làm đáp án — CHƯA chạy thử qua Postgres thật (cần hạ tầng)
 app/evaluate.py          [SKELETON] Giai đoạn 7
 app/api.py               [SKELETON] Giai đoạn 8
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
