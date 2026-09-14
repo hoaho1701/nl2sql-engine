@@ -5,7 +5,9 @@ from collections import Counter
 
 def normalize_result(rows, expected_column_count: int | None = None) -> Counter:
     """Normalize a result set (e.g. trim extra columns) before comparison."""
-    raise NotImplementedError
+    if expected_column_count is not None:
+        rows = [row[:expected_column_count] for row in rows]
+    return Counter(rows)
 
 
 def evaluate(use_self_correction: bool = False) -> None:

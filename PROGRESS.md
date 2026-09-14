@@ -94,7 +94,7 @@ app/llm_sql.py           [SKELETON] Giai đoạn 4
 app/sql_executor.py      [MỘT PHẦN] Giai đoạn 5 — _is_select_only() + _is_single_statement() (lớp 1 & 3) đã viết + tự test (4/4 case, kể cả case biên "SELECT 1;;" -> 2 statement); lớp 2 (role read-only) + run_sql_safe() còn NotImplementedError, TẠM HOÃN vì cần Postgres thật
 app/self_correct.py      [SKELETON] Giai đoạn 6
 app/eval_test_set.py     [MỘT PHẦN] Giai đoạn 7 — 18 case (question, gold_sql) đã viết, phủ đủ 12 dạng câu hỏi trong checklist; đã tự verify bằng pandas cho các case phức tạp (top category, top seller, HAVING, date comparison, fan-out dedup, 3+ table join) trước khi ghi làm đáp án — CHƯA chạy thử qua Postgres thật (cần hạ tầng)
-app/evaluate.py          [SKELETON] Giai đoạn 7
+app/evaluate.py          [MỘT PHẦN] Giai đoạn 7 — normalize_result() đã viết + tự test (4/4 case, gồm cả case biên rows=[] và Counter giữ đúng số lần lặp thay vì gộp như set); evaluate() còn NotImplementedError, TẠM HOÃN vì cần Ollama/Postgres thật
 app/api.py               [SKELETON] Giai đoạn 8
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
 tests/                   [CHƯA TẠO] Giai đoạn 8 — unit test cho phần logic thuần Python (không cần LLM/Postgres), chạy trong CI
