@@ -35,21 +35,23 @@ Xây **1 sản phẩm Text-to-SQL hoàn chỉnh**, khởi động từ **2026-09
 
 ## Lộ trình tổng thể (11 giai đoạn, đánh số 0-10)
 
-Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **XONG**. Cột "Cập nhật lần cuối" ghi ngày (YYYY-MM-DD) mỗi khi Status đổi — giúp phát hiện nhanh nếu hạ tầng/quyết định đã lâu không đụng tới (vd Docker/Ollama có thể đã tắt từ lâu).
+Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **XONG**. Cột "Cập nhật lần cuối" ghi ngày (YYYY-MM-DD) mỗi khi Status đổi — giúp phát hiện nhanh nếu hạ tầng/quyết định đã lâu không đụng tới (vd Docker/Ollama có thể đã tắt từ lâu). Cột "Ước tính effort" là số giờ làm việc tập trung (không tính thời gian chờ đợi/nghiên cứu ngoài lề) — chỉ để có 1 mốc tham khảo thô, không phải cam kết cứng; cập nhật lại nếu thực tế lệch nhiều.
 
-| # | Giai đoạn | Status | Cập nhật lần cuối |
-|---|---|---|---|
-| 0 | Môi trường & hạ tầng (Docker, Postgres, Ollama, Chroma) | **CHƯA BẮT ĐẦU** | — |
-| 1 | Nền dữ liệu (tải + load Olist → Postgres, FK thật) | **ĐANG LÀM** | 2026-09-14 |
-| 2 | Schema metadata layer (DDL + mô tả + quan hệ + cảnh báo bẫy) | **ĐANG LÀM** | 2026-09-14 |
-| 3 | Vector store & training data cho RAG (Chroma + embedding) | CHƯA BẮT ĐẦU | — |
-| 4 | Tích hợp LLM với RAG prompt động (Ollama) | CHƯA BẮT ĐẦU | — |
-| 5 | Thực thi SQL an toàn trên Postgres | CHƯA BẮT ĐẦU | — |
-| 6 | Vòng tự sửa lỗi (self-correction loop) | CHƯA BẮT ĐẦU | — |
-| 7 | Đánh giá độ chính xác (train/eval set tách biệt, experiment log) | CHƯA BẮT ĐẦU | — |
-| 8 | Đóng gói: FastAPI + React + docker-compose + CI/CD | CHƯA BẮT ĐẦU | — |
-| 9 | Khác biệt hoá AI + MLOps observability (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
-| 10 | README & case-study cho recruiter | CHƯA BẮT ĐẦU | — |
+| # | Giai đoạn | Status | Cập nhật lần cuối | Ước tính effort |
+|---|---|---|---|---|
+| 0 | Môi trường & hạ tầng (Docker, Postgres, Ollama, Chroma) | **CHƯA BẮT ĐẦU** | — | 2-4h |
+| 1 | Nền dữ liệu (tải + load Olist → Postgres, FK thật) | **ĐANG LÀM** | 2026-09-14 | 4-6h |
+| 2 | Schema metadata layer (DDL + mô tả + quan hệ + cảnh báo bẫy) | **ĐANG LÀM** | 2026-09-14 | 3-5h |
+| 3 | Vector store & training data cho RAG (Chroma + embedding) | CHƯA BẮT ĐẦU | — | 4-6h |
+| 4 | Tích hợp LLM với RAG prompt động (Ollama) | CHƯA BẮT ĐẦU | — | 4-6h |
+| 5 | Thực thi SQL an toàn trên Postgres | CHƯA BẮT ĐẦU | — | 4-6h |
+| 6 | Vòng tự sửa lỗi (self-correction loop) | CHƯA BẮT ĐẦU | — | 2-3h |
+| 7 | Đánh giá độ chính xác (train/eval set tách biệt, experiment log) | CHƯA BẮT ĐẦU | — | 4-6h |
+| 8 | Đóng gói: FastAPI + React + docker-compose + CI/CD | CHƯA BẮT ĐẦU | — | 8-12h |
+| 9 | Khác biệt hoá AI + MLOps observability (so với vanna gốc) | CHƯA BẮT ĐẦU | — | 6-10h |
+| 10 | README & case-study cho recruiter | CHƯA BẮT ĐẦU | — | 2-4h |
+
+**Tổng ước tính**: ~43-68 giờ làm việc tập trung — tương đương khoảng 1-2 tuần nếu làm full-time, hoặc 4-8 tuần nếu làm buổi tối/cuối tuần. Không tính thời gian chờ máy M4 sẵn sàng (Giai đoạn 0 đang hoãn) hay thời gian debug phát sinh ngoài dự kiến.
 
 **Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và phần Postgres của `app/load_data.py`/`app/schema_context.py` (`get_engine`, `create_schema`, `load_csv_to_table`, `verify_row_counts`, `main`, `generate_ddl`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Việc infra-độc-lập còn lại: bắt đầu Giai đoạn 7 — viết `app/eval_test_set.py` (tối thiểu 15 case `question`/`gold_sql`, checklist dạng câu hỏi cần phủ đã ghi ở Giai đoạn 7) — viết được ngay, chỉ chạy thử `gold_sql` thật (so với Postgres) mới cần hạ tầng, còn viết câu hỏi + SQL dự kiến thì không.
 
@@ -68,6 +70,7 @@ Các điểm chưa chốt, cần quyết định trong lúc làm chứ không đ
 - **Version cụ thể của Postgres/Ollama/ChromaDB/psycopg2/sqlparse** — chưa chốt, xem bảng "Version cụ thể đã cài" ở Giai đoạn 0, điền khi cài xong.
 - **`statement_timeout` mặc định cho Postgres** — con số hợp lý (vd 5s) là kinh nghiệm chung, chưa benchmark trên chính dữ liệu Olist + query 3-4 bảng JOIN thật; nên đo ở Giai đoạn 5/7 rồi mới chốt.
 - **Số lượng ví dụ (question, SQL) cần cho RAG training set** — 15-20 case chỉ là điểm khởi đầu ở Giai đoạn 3, có thể cần nhiều hơn tuỳ vào accuracy đo được ở Giai đoạn 7.
+- **Dữ liệu nhạy cảm/PII trong kết quả SQL** — guardrail hiện tại (Giai đoạn 9 Nhóm A #1) chỉ xử lý bẫy fan-out/NULL, KHÔNG chặn 1 câu SELECT hợp lệ về cú pháp nhưng trả về dữ liệu nhạy cảm (vd `SELECT customer_unique_id, customer_city FROM customers` lộ thông tin định danh). Với dataset Olist là dữ liệu công khai/ẩn danh hoá sẵn nên rủi ro thực tế thấp, nhưng nếu muốn câu chuyện "an toàn" trong README (Giai đoạn 10) thuyết phục hơn khi bị hỏi xoáy lúc phỏng vấn, cần quyết định: (a) bỏ qua vì dataset không có PII thật, ghi rõ giả định này trong README, hoặc (b) thêm 1 danh sách cột nhạy cảm bị chặn/ẩn ở tầng `sql_executor.py`. Chưa quyết — quyết định trước khi viết README ở Giai đoạn 10.
 
 ---
 
@@ -98,6 +101,7 @@ tests/                   [CHƯA TẠO] Giai đoạn 8 — unit test cho phần l
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
+LICENSE                  [CHƯA TẠO] Giai đoạn 10 — khuyến nghị MIT, cần trước khi công khai repo
 ```
 
 ---
@@ -389,5 +393,6 @@ Chia làm 2 nhóm mục đích khác nhau: **(A) khác biệt AI/sản phẩm** 
 - Viết `README.md` (tiếng Anh) gồm theo đúng thứ tự: elevator pitch 1-2 câu → demo (GIF hoặc link) → bảng kết quả accuracy (lấy trực tiếp từ `results/eval_log.csv`, có thể trích bảng before/after) → sơ đồ kiến trúc đơn giản (không cần chi tiết như PROGRESS.md, có thể vẽ bằng Mermaid) → mục "What's different from Vanna" (tóm tắt 3 điểm ở Giai đoạn 9 Nhóm A) → hướng dẫn chạy (`docker compose up`, `.env.example`...) → tech stack liệt kê ngắn gọn.
 - Quay/chụp demo ngắn (30 giây - 1 phút): 1 câu hỏi bình thường (xem SQL sinh ra + kết quả), 1 câu hỏi khó cố tình để xem self-correction hoạt động.
 - Đặt `README.md` ở gốc repo. `PROGRESS.md` giữ nguyên vai trò nhật ký nội bộ — không gộp 2 file, không để README dài dòng như PROGRESS.md.
+- Thêm file `LICENSE` ở gốc repo (khuyến nghị MIT — đơn giản, phổ biến nhất cho portfolio project, cho phép người khác xem/dùng lại tự do) — cần có trước khi đưa link repo vào CV/đăng công khai, thiếu file này khiến repo mặc định "all rights reserved", gây khó hiểu cho người xem.
 
 **Tại sao làm ở cuối cùng**: cần có số liệu + demo thật mới viết đúng được; đây cũng là lý do Giai đoạn 10 đứng sau Giai đoạn 9 trong thứ tự đánh số dù về mặt thời gian có thể viết song song lúc gần hoàn thiện, không nhất thiết đợi 100% các giai đoạn trước xong.
