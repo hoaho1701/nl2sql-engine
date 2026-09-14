@@ -33,7 +33,7 @@ Xây **1 sản phẩm Text-to-SQL hoàn chỉnh**, khởi động từ **2026-09
 - Train set (dữ liệu nạp vào vector store) và eval set (đo độ chính xác) phải tách biệt hoàn toàn, không rò rỉ dữ liệu giữa hai bên.
 - **Thể hiện rõ năng lực MLOps + backend + frontend**, không chỉ thuần AI/RAG — lý do: mục tiêu nghề nghiệp là portfolio phục vụ xin việc, phạm vi rộng hơn 1 vai trò AI/LLM engineer thuần tuý. Cụ thể: CI pipeline tự động (Giai đoạn 8), experiment log có số liệu theo thời gian (Giai đoạn 7), dashboard observability (Giai đoạn 9), API backend chuẩn REST (Giai đoạn 8), UI React tối giản nhưng thật (Giai đoạn 8) — đây là lý do Docker/Postgres/React KHÔNG bị cắt bớt dù tốn thời gian hơn SQLite/Streamlit.
 
-## Lộ trình tổng thể (10 giai đoạn, đánh số 0-9)
+## Lộ trình tổng thể (11 giai đoạn, đánh số 0-10)
 
 Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **XONG**. Cột "Cập nhật lần cuối" ghi ngày (YYYY-MM-DD) mỗi khi Status đổi — giúp phát hiện nhanh nếu hạ tầng/quyết định đã lâu không đụng tới (vd Docker/Ollama có thể đã tắt từ lâu).
 
@@ -49,6 +49,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 | 7 | Đánh giá độ chính xác (train/eval set tách biệt, experiment log) | CHƯA BẮT ĐẦU | — |
 | 8 | Đóng gói: FastAPI + React + docker-compose + CI/CD | CHƯA BẮT ĐẦU | — |
 | 9 | Khác biệt hoá AI + MLOps observability (so với vanna gốc) | CHƯA BẮT ĐẦU | — |
+| 10 | README & case-study cho recruiter | CHƯA BẮT ĐẦU | — |
 
 **Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và phần Postgres của `app/load_data.py`/`app/schema_context.py` (`get_engine`, `create_schema`, `load_csv_to_table`, `verify_row_counts`, `main`, `generate_ddl`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. Việc infra-độc-lập còn lại: bắt đầu Giai đoạn 7 — viết `app/eval_test_set.py` (tối thiểu 15 case `question`/`gold_sql`, checklist dạng câu hỏi cần phủ đã ghi ở Giai đoạn 7) — viết được ngay, chỉ chạy thử `gold_sql` thật (so với Postgres) mới cần hạ tầng, còn viết câu hỏi + SQL dự kiến thì không.
 
@@ -96,6 +97,7 @@ frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công c�
 tests/                   [CHƯA TẠO] Giai đoạn 8 — unit test cho phần logic thuần Python (không cần LLM/Postgres), chạy trong CI
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
+README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
 ```
 
 ---
@@ -368,3 +370,24 @@ Chia làm 2 nhóm mục đích khác nhau: **(A) khác biệt AI/sản phẩm** 
 - Multi-turn: câu hỏi follow-up tham chiếu ngữ cảnh câu trước đó.
 
 **Việc cần làm**: làm cả nhóm A (chọn tối thiểu 2/3 mục) và nhóm B (cả 3 mục, vì đã triển khai sẵn ở Giai đoạn 7/8, chỉ cần nối vào dashboard) — KHÔNG làm tất cả nhóm A cùng lúc, mỗi tính năng nhóm A nên đo tác động riêng bằng cách so accuracy trước/sau khi chỉ bật 1 tính năng đó (xem cách đo ở Giai đoạn 7, ghi vào `results/eval_log.csv`), tránh gộp nhiều thay đổi rồi không biết cái nào thực sự có ích.
+
+---
+
+## Giai đoạn 10 — README & case-study cho recruiter
+
+**Mục tiêu**: có 1 `README.md` đóng vai trò "trang bán hàng" của dự án — thứ đầu tiên (và có thể duy nhất) 1 nhà tuyển dụng/reviewer thực sự đọc trong vài phút, khác hẳn vai trò của `PROGRESS.md`.
+
+**Khái niệm cần nắm trước khi viết**
+- **Đối tượng đọc khác hẳn PROGRESS.md**: `PROGRESS.md` viết cho chính bạn (và AI) để duy trì ngữ cảnh qua nhiều phiên làm việc — dài, chi tiết, tiếng Việt, ghi lại cả sai lầm/quá trình cân nhắc. `README.md` viết cho người lạ chỉ có vài phút, không quan tâm quá trình bạn đã đi qua, chỉ quan tâm: dự án làm gì, có chạy được không, có gì đáng chú ý. **Không dịch PROGRESS.md sang tiếng Anh rồi rút gọn** — viết lại từ đầu theo đúng mục đích khác.
+- **Thứ tự đọc quyết định thứ tự viết**: người đọc lướt từ trên xuống rồi bỏ đi bất cứ lúc nào — nên phần quan trọng nhất phải nằm ngay đầu: 1-2 câu mô tả dự án (elevator pitch) → demo trực quan (ảnh/GIF hoặc link chạy được) → kết quả bằng số liệu cụ thể → mới đến chi tiết kiến trúc/cách chạy. Đừng bắt người đọc cuộn hết trang mới thấy điều thú vị nhất.
+- **"Show, don't tell"**: thay vì viết "tôi biết Docker/FastAPI/React/MLOps", để chính GIF demo + bảng accuracy + sơ đồ kiến trúc tự chứng minh — nhà tuyển dụng tự suy ra kỹ năng từ bằng chứng, đáng tin hơn nhiều so với tự liệt kê.
+- **Viết SAU CÙNG, không viết trước**: README cần số liệu thật (từ `results/eval_log.csv`) và demo thật (từ Giai đoạn 6-9 đã chạy được) — viết sớm sẽ phải sửa lại nhiều lần và có nguy cơ ghi sai kỳ vọng so với thực tế.
+
+**Tech stack**: không cần công cụ mới — Markdown thuần; có thể dùng công cụ ghi màn hình có sẵn trên macOS (Screenshot.app/QuickTime) để quay demo ngắn thành GIF/video.
+
+**Việc cần làm**
+- Viết `README.md` (tiếng Anh) gồm theo đúng thứ tự: elevator pitch 1-2 câu → demo (GIF hoặc link) → bảng kết quả accuracy (lấy trực tiếp từ `results/eval_log.csv`, có thể trích bảng before/after) → sơ đồ kiến trúc đơn giản (không cần chi tiết như PROGRESS.md, có thể vẽ bằng Mermaid) → mục "What's different from Vanna" (tóm tắt 3 điểm ở Giai đoạn 9 Nhóm A) → hướng dẫn chạy (`docker compose up`, `.env.example`...) → tech stack liệt kê ngắn gọn.
+- Quay/chụp demo ngắn (30 giây - 1 phút): 1 câu hỏi bình thường (xem SQL sinh ra + kết quả), 1 câu hỏi khó cố tình để xem self-correction hoạt động.
+- Đặt `README.md` ở gốc repo. `PROGRESS.md` giữ nguyên vai trò nhật ký nội bộ — không gộp 2 file, không để README dài dòng như PROGRESS.md.
+
+**Tại sao làm ở cuối cùng**: cần có số liệu + demo thật mới viết đúng được; đây cũng là lý do Giai đoạn 10 đứng sau Giai đoạn 9 trong thứ tự đánh số dù về mặt thời gian có thể viết song song lúc gần hoàn thiện, không nhất thiết đợi 100% các giai đoạn trước xong.
