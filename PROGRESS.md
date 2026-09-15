@@ -105,7 +105,7 @@ tests/test_build_prompt.py [XONG] Giai đoạn 8 — 5 test cho build_messages()
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
-LICENSE                  [CHƯA TẠO] Giai đoạn 10 — khuyến nghị MIT, cần trước khi công khai repo
+LICENSE                  [XONG] Giai đoạn 10 — MIT, tên "Hòa Hồ" (lấy từ git committer tự nhận diện) — ⚠️ TỰ KIỂM TRA LẠI tên/năm trước khi công khai repo, chưa được người dùng xác nhận trực tiếp
 ```
 
 ---
