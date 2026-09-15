@@ -97,7 +97,9 @@ app/eval_test_set.py     [MỘT PHẦN] Giai đoạn 7 — 18 case (question, go
 app/evaluate.py          [MỘT PHẦN] Giai đoạn 7 — normalize_result() đã viết + tự test (4/4 case, gồm cả case biên rows=[] và Counter giữ đúng số lần lặp thay vì gộp như set); evaluate() còn NotImplementedError, TẠM HOÃN vì cần Ollama/Postgres thật
 app/api.py               [SKELETON] Giai đoạn 8
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
-tests/                   [CHƯA TẠO] Giai đoạn 8 — unit test cho phần logic thuần Python (không cần LLM/Postgres), chạy trong CI
+tests/test_sql_executor.py [XONG] Giai đoạn 8 — 8 test cho _is_select_only/_is_single_statement, 8/8 pass (`pytest tests/ -v`)
+tests/test_evaluate.py     [CHƯA TẠO] Giai đoạn 8 — test cho normalize_result()
+tests/test_build_prompt.py [CHƯA TẠO] Giai đoạn 8 — test cho build_messages()
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
