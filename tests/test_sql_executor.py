@@ -17,6 +17,19 @@ def test_empty_string_is_rejected():
     assert _is_select_only("") is False
 
 
+def test_cte_select_is_allowed():
+    assert _is_select_only("WITH x AS (SELECT 1) SELECT * FROM x") is True
+
+
+def test_data_modifying_cte_is_not_caught_by_this_layer_alone():
+    """Documented gap: a CTE can hide a write inside a read-looking statement.
+    No string-level check can reliably catch this — layer 2 (read-only DB
+    role) is what actually blocks it. This test exists so the gap is visible
+    and tracked, not silently missing from the test suite."""
+    sql = "WITH x AS (DELETE FROM orders RETURNING *) SELECT * FROM x"
+    assert _is_select_only(sql) is True
+
+
 def test_single_select_statement_is_allowed():
     assert _is_single_statement("SELECT 1") is True
 
@@ -31,3 +44,9 @@ def test_stacked_query_is_rejected():
 
 def test_double_semicolon_is_rejected():
     assert _is_single_statement("SELECT 1;;") is False
+
+
+def test_semicolon_inside_string_literal_is_not_miscounted():
+    """This is the exact reason sqlparse was chosen over naive ';' counting —
+    a semicolon inside quoted data must not be treated as a statement break."""
+    assert _is_single_statement("SELECT * FROM orders WHERE note = 'hi; there'") is True
