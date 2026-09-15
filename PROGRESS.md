@@ -430,3 +430,9 @@ Chia làm 2 nhóm mục đích khác nhau: **(A) khác biệt AI/sản phẩm** 
 - **Ghi credit nguồn dữ liệu trong README** (mục Data/Acknowledgements): dataset Olist dùng license **CC BY-NC-SA 4.0** (đã verify trực tiếp trên Kaggle, không phải đoán) — yêu cầu ghi rõ nguồn (Olist, link Kaggle dataset) khi dùng. Dự án dùng cho mục đích phi thương mại (học tập/portfolio) nên hợp lệ, chỉ cần đảm bảo có credit, không tự nhận là dữ liệu tự thu thập.
 
 **Tại sao làm ở cuối cùng**: cần có số liệu + demo thật mới viết đúng được; đây cũng là lý do Giai đoạn 10 đứng sau Giai đoạn 9 trong thứ tự đánh số dù về mặt thời gian có thể viết song song lúc gần hoàn thiện, không nhất thiết đợi 100% các giai đoạn trước xong.
+
+---
+
+## Tài liệu học — 1 trang tổng hợp
+
+**[NL2SQL Build Path](https://claude.ai/artifact/KYJCGZx9kxABBkfQKpRos2)** — kiến thức cốt lõi + link tài liệu chính thức (không phải blog bên thứ ba) cho từng giai đoạn 0-10, kèm 2 bài báo gốc (RAG — Lewis et al. 2020; Spider benchmark — nguồn khái niệm "execution accuracy" ở Giai đoạn 7). Dùng làm tài liệu tra cứu khi làm tới từng giai đoạn, không cần đọc hết 1 lượt.
