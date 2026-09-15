@@ -30,6 +30,18 @@ def test_data_modifying_cte_is_not_caught_by_this_layer_alone():
     assert _is_select_only(sql) is True
 
 
+def test_explain_analyze_is_rejected():
+    """EXPLAIN ANALYZE actually executes the statement it "analyzes" — if this
+    prefix were ever accepted, EXPLAIN ANALYZE DELETE ... would really delete
+    rows while looking like a harmless read. Must stay rejected."""
+    assert _is_select_only("EXPLAIN ANALYZE DELETE FROM orders") is False
+
+
+def test_call_statement_is_rejected():
+    """CALL invokes a stored procedure, which can have arbitrary side effects."""
+    assert _is_select_only("CALL some_procedure()") is False
+
+
 def test_single_select_statement_is_allowed():
     assert _is_single_statement("SELECT 1") is True
 
