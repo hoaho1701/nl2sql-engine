@@ -1,3 +1,5 @@
+"""Tests for build_prompt's build_messages()."""
+
 from app.build_prompt import build_messages
 
 

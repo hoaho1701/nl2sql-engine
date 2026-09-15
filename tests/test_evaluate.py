@@ -1,3 +1,5 @@
+"""Tests for evaluate's normalize_result()."""
+
 from collections import Counter
 
 from app.evaluate import normalize_result

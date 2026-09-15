@@ -1,3 +1,5 @@
+"""Tests for api's Pydantic models and CORS config (no live server needed)."""
+
 from fastapi.testclient import TestClient
 
 from app.api import QueryRequest, QueryResponse, app

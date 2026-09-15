@@ -1,3 +1,5 @@
+"""Tests for sql_executor's pure-logic layers (_is_select_only, _is_single_statement)."""
+
 from app.sql_executor import _is_select_only, _is_single_statement
 
 
