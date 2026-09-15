@@ -53,11 +53,16 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 **Tổng ước tính**: ~43-68 giờ làm việc tập trung — tương đương khoảng 1-2 tuần nếu làm full-time, hoặc 4-8 tuần nếu làm buổi tối/cuối tuần. Không tính thời gian chờ máy M4 sẵn sàng (Giai đoạn 0 đang hoãn) hay thời gian debug phát sinh ngoài dự kiến.
 
-**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và mọi phần cần Postgres/Ollama thật (`app/load_data.py`, `app/schema_context.py generate_ddl`, chạy thử `app/eval_test_set.py`, `app/evaluate.py`, `app/api.py` endpoint) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới.
+**⏸️ Quyết định (2026-09-15): tạm dừng làm việc trên máy Intel này, đợi chuyển hẳn sang M4.** Đây là điểm dừng có chủ đích, không phải bị chặn hoàn toàn — vẫn còn vài việc infra-độc-lập có thể làm nếu muốn tiếp tục trước khi có M4 (xem danh sách "Còn làm được nhưng chưa làm" ngay dưới), nhưng người dùng chọn dừng ở đây.
 
-**Danh sách việc infra-độc-lập (2026-09-14) coi như đã làm hết** — cả 3 mục (`tests/`, `LICENSE`, `app/api.py` Pydantic+CORS) đã xong, 27/27 test pass. Việc còn lại duy nhất chưa cần hạ tầng: `.github/workflows/ci.yml` — có thể **viết** ngay (lint + `pytest` + `docker compose build`), nhưng **không verify được chạy thật** vì repo chưa có remote GitHub (`git remote -v` hiện trống). Nếu làm, chỉ nên coi là bản nháp, không đánh dấu XONG cho tới khi có remote để tự chạy thử 1 lần.
+**Bước tiếp theo cần làm ngay khi có M4**: Giai đoạn 0 (cài Docker + Ollama + Chroma — verify lại từ đầu bằng `sw_vers`/`sysctl -n machdep.cpu.brand_string`/`hostname`, đừng giả định đã đổi máy chỉ vì file này nói vậy). Sau đó: Giai đoạn 1 load data thật vào Postgres, rồi chạy thử ngay 18 `gold_sql` trong `app/eval_test_set.py` qua `psycopg2` thật để xác nhận không có lỗi cú pháp Postgres nào (pandas lúc trước chỉ verify được logic/con số, không bắt được lỗi cú pháp SQL).
 
-`app/eval_test_set.py` đã có 18 case, đã tự verify đáp án bằng pandas trực tiếp trên CSV (không phải qua Postgres) — khi có hạ tầng, việc đầu tiên nên làm là load data (Giai đoạn 1) rồi chạy thử `gold_sql` qua `psycopg2` thật để xác nhận không có lỗi cú pháp Postgres nào (pandas không bắt được lỗi cú pháp SQL).
+**Còn làm được nhưng chưa làm (không bắt buộc, tự quyết định khi quay lại)**:
+- `app/evaluate.py` và `app/self_correct.py`: viết luồng xử lý + test bằng cách giả lập (mock) `generate_sql`/`run_sql_safe` — không cần hạ tầng, nhưng đã chủ động hoãn (không phải bị chặn).
+- `app/vector_store.py`: chưa xác minh được liệu phần cơ chế Chroma (tạo client/collection/add/retrieve) có chạy local hoàn toàn không cần Ollama hay không — chưa cài `chromadb` để test thử.
+- `.github/workflows/ci.yml`: có thể viết bản nháp, nhưng không verify chạy thật được vì repo chưa có remote GitHub.
+
+**Trạng thái cuối phiên (2026-09-15)**: 27/27 test pass (`pytest tests/ -v`), git sạch (`git status` clean sau mỗi commit), toàn bộ tiến độ đã ghi chi tiết trong bảng "Trạng thái file hiện tại" bên dưới.
 
 ---
 
