@@ -53,7 +53,11 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 **Tổng ước tính**: ~43-68 giờ làm việc tập trung — tương đương khoảng 1-2 tuần nếu làm full-time, hoặc 4-8 tuần nếu làm buổi tối/cuối tuần. Không tính thời gian chờ máy M4 sẵn sàng (Giai đoạn 0 đang hoãn) hay thời gian debug phát sinh ngoài dự kiến.
 
-**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và mọi phần cần Postgres/Ollama thật (`app/load_data.py`, `app/schema_context.py generate_ddl`, chạy thử `app/eval_test_set.py`, `app/evaluate.py`) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới. `app/eval_test_set.py` đã có 18 case, đã tự verify đáp án bằng pandas trực tiếp trên CSV (không phải qua Postgres) — khi có hạ tầng, việc đầu tiên nên làm là load data (Giai đoạn 1) rồi chạy thử `gold_sql` qua `psycopg2` thật để xác nhận không có lỗi cú pháp Postgres nào (pandas không bắt được lỗi cú pháp SQL).
+**Bước tiếp theo cần làm ngay**: Giai đoạn 0 (cài Docker + Ollama + Chroma) và mọi phần cần Postgres/Ollama thật (`app/load_data.py`, `app/schema_context.py generate_ddl`, chạy thử `app/eval_test_set.py`, `app/evaluate.py`, `app/api.py` endpoint) đang **tạm hoãn** — xem mục "Rủi ro" đầu tiên bên dưới.
+
+**Danh sách việc infra-độc-lập (2026-09-14) coi như đã làm hết** — cả 3 mục (`tests/`, `LICENSE`, `app/api.py` Pydantic+CORS) đã xong, 27/27 test pass. Việc còn lại duy nhất chưa cần hạ tầng: `.github/workflows/ci.yml` — có thể **viết** ngay (lint + `pytest` + `docker compose build`), nhưng **không verify được chạy thật** vì repo chưa có remote GitHub (`git remote -v` hiện trống). Nếu làm, chỉ nên coi là bản nháp, không đánh dấu XONG cho tới khi có remote để tự chạy thử 1 lần.
+
+`app/eval_test_set.py` đã có 18 case, đã tự verify đáp án bằng pandas trực tiếp trên CSV (không phải qua Postgres) — khi có hạ tầng, việc đầu tiên nên làm là load data (Giai đoạn 1) rồi chạy thử `gold_sql` qua `psycopg2` thật để xác nhận không có lỗi cú pháp Postgres nào (pandas không bắt được lỗi cú pháp SQL).
 
 ---
 
@@ -95,13 +99,14 @@ app/sql_executor.py      [MỘT PHẦN] Giai đoạn 5 — _is_select_only() (ch
 app/self_correct.py      [SKELETON] Giai đoạn 6
 app/eval_test_set.py     [MỘT PHẦN] Giai đoạn 7 — 18 case (question, gold_sql) đã viết, phủ đủ 12 dạng câu hỏi trong checklist; đã tự verify bằng pandas cho các case phức tạp (top category, top seller, HAVING, date comparison, fan-out dedup, 3+ table join) trước khi ghi làm đáp án — CHƯA chạy thử qua Postgres thật (cần hạ tầng)
 app/evaluate.py          [MỘT PHẦN] Giai đoạn 7 — normalize_result() đã viết + tự test (4/4 case, gồm cả case biên rows=[] và Counter giữ đúng số lần lặp thay vì gộp như set); evaluate() còn NotImplementedError, TẠM HOÃN vì cần Ollama/Postgres thật
-app/api.py               [SKELETON] Giai đoạn 8
+app/api.py               [MỘT PHẦN] Giai đoạn 8 — CORSMiddleware + QueryRequest/QueryResponse (Pydantic) đã viết + test (3/3 pass qua fastapi.testclient.TestClient, không cần server thật); endpoint POST /query còn thiếu vì cần self_correct.answer_question (TẠM HOÃN, cần Postgres/Ollama)
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
 tests/__init__.py           [ĐÃ TẠO] trống — giúp `pytest` dò ngược lên gốc repo để tìm package `app/`, đồng nhất cách làm với `app/__init__.py` (thay cho `pytest.ini` đã thử trước đó, đã xoá vì dư thừa)
 tests/test_sql_executor.py [XONG] Giai đoạn 8 — 13 test cho _is_select_only/_is_single_statement, 13/13 pass, gồm test khoá lại giới hạn CTE-ghi-dữ-liệu và 2 test chống nới lỏng nhầm (EXPLAIN ANALYZE, CALL). Chạy bằng `pytest tests/ -v` từ thư mục gốc — KHÔNG chạy trực tiếp bằng `python tests/test_x.py`
 tests/test_evaluate.py     [XONG] Giai đoạn 8 — 6 test cho normalize_result(), 6/6 pass
 tests/test_build_prompt.py [XONG] Giai đoạn 8 — 5 test cho build_messages(), 5/5 pass
---- Tổng: 24/24 test pass (`pytest tests/ -v`) — mục 1 trong danh sách "còn làm được gì" đã hoàn tất ---
+tests/test_api.py          [XONG] Giai đoạn 8 — 3 test cho QueryRequest/QueryResponse/CORS qua TestClient, 3/3 pass
+--- Tổng: 27/27 test pass (`pytest tests/ -v`) — cả 3 mục trong danh sách "còn làm được gì" (tests/, LICENSE, api.py Pydantic+CORS) đã hoàn tất ---
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
