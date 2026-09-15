@@ -99,8 +99,9 @@ app/api.py               [SKELETON] Giai đoạn 8
 frontend/                [CHƯA TẠO] Giai đoạn 8 — tạo bằng công cụ React khi tới lúc, không scaffold tay
 tests/__init__.py           [ĐÃ TẠO] trống — giúp `pytest` dò ngược lên gốc repo để tìm package `app/`, đồng nhất cách làm với `app/__init__.py` (thay cho `pytest.ini` đã thử trước đó, đã xoá vì dư thừa)
 tests/test_sql_executor.py [XONG] Giai đoạn 8 — 13 test cho _is_select_only/_is_single_statement, 13/13 pass, gồm test khoá lại giới hạn CTE-ghi-dữ-liệu và 2 test chống nới lỏng nhầm (EXPLAIN ANALYZE, CALL). Chạy bằng `pytest tests/ -v` từ thư mục gốc — KHÔNG chạy trực tiếp bằng `python tests/test_x.py`
-tests/test_evaluate.py     [CHƯA TẠO] Giai đoạn 8 — test cho normalize_result()
-tests/test_build_prompt.py [CHƯA TẠO] Giai đoạn 8 — test cho build_messages()
+tests/test_evaluate.py     [XONG] Giai đoạn 8 — 6 test cho normalize_result(), 6/6 pass
+tests/test_build_prompt.py [XONG] Giai đoạn 8 — 5 test cho build_messages(), 5/5 pass
+--- Tổng: 24/24 test pass (`pytest tests/ -v`) — mục 1 trong danh sách "còn làm được gì" đã hoàn tất ---
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
