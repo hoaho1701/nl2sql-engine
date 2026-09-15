@@ -66,6 +66,8 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 **Trạng thái cuối phiên (2026-09-15)**: 27/27 test pass (`pytest tests/ -v`), git sạch (`git status` clean sau mỗi commit), toàn bộ tiến độ đã ghi chi tiết trong bảng "Trạng thái file hiện tại" bên dưới.
 
+**Repo đã lên GitHub**: `https://github.com/hoaho1701/nl2sql-engine` — hiện đang **Private**, đổi sang Public khi code đủ hoàn chỉnh (`gh repo edit hoaho1701/nl2sql-engine --visibility public`, hoặc qua Settings trên web). Tên repo cố ý khác tên thư mục local (`text2sql`) — xem lý do ở phần lịch sử trò chuyện, không phải nhầm lẫn. **Trên máy M4, `git clone https://github.com/hoaho1701/nl2sql-engine.git` sẽ tự ra thư mục tên `nl2sql-engine/`** (không phải `text2sql`), khớp đúng tên repo — bình thường, không phải lỗi.
+
 ---
 
 ## Rủi ro / câu hỏi mở
