@@ -6,6 +6,8 @@
 > 3. Khi 1 giai đoạn hoàn tất, **cập nhật Status + ghi lại quyết định/bug đã gặp** ngay trong file này (theo đúng cấu trúc mỗi giai đoạn: Mục tiêu / Khái niệm cần nắm / Tech stack / Việc cần làm / Tại sao) trước khi kết thúc phiên làm việc — đây là cách duy nhất để 1 box chat mới "nối tiếp" được đúng ngữ cảnh.
 > 4. Người dùng muốn **tự code**, AI chỉ hướng dẫn/giải thích bản chất, không code hộ toàn bộ trừ khi được yêu cầu rõ ràng ("code hộ", "viết luôn").
 > 5. Nếu bạn là 1 box chat mới nhận file này, **hỏi lại người dùng** xem đã hoàn thành đến Giai đoạn mấy trong bảng Lộ trình bên dưới, đừng giả định.
+> 6. **Quy ước code trong `app/`/`tests/`**: comment/docstring viết bằng **tiếng Anh**, ngắn gọn, chỉ mô tả hành vi — **không** nhắc số "Giai đoạn N" bên trong code (thông tin đó chỉ nằm ở file này, tránh code bị sai lệch nếu roadmap đánh số lại sau này). File `.md` (PROGRESS.md này) vẫn viết tiếng Việt bình thường — 2 loại tài liệu khác mục đích, không cần đồng nhất ngôn ngữ.
+> 7. **Nếu clone repo này lần đầu trên máy mới**: `data/` và `.env` bị `.gitignore` loại, **không có sẵn sau khi clone** — xem mục "Sau khi clone sang máy mới" ngay dưới "Trạng thái file hiện tại" để biết việc cần làm trước khi chạy được gì.
 
 ---
 
@@ -83,13 +85,24 @@ Các điểm chưa chốt, cần quyết định trong lúc làm chứ không đ
 
 ---
 
+## Sau khi clone sang máy mới (vd chuyển sang M4)
+
+`git clone`/`git pull` **không** mang theo mọi thứ — 2 phần bị `.gitignore` loại có chủ đích, phải tự làm lại thủ công trước khi chạy được gì:
+
+1. **`data/`** (gồm `data/raw/*.csv` — 9 file CSV Olist) — **không có sau khi clone**. Tải lại từ Kaggle: `olistbr/brazilian-ecommerce` (xem license CC BY-NC-SA 4.0 đã ghi ở Giai đoạn 10), giải nén đúng vào `data/raw/`.
+2. **`.env`** — không có sau khi clone (đúng chủ đích, không commit secret). Copy từ `.env.example` (`cp .env.example .env`), tự điền giá trị thật (password Postgres, v.v — xem nội dung `.env.example` để biết cần điền gì).
+
+Sau 2 bước trên mới bắt đầu Giai đoạn 0 như bình thường. `__pycache__/`, `.pytest_cache/` cũng bị loại nhưng không cần làm gì — chúng tự sinh lại khi chạy code/test, không ảnh hưởng gì.
+
+---
+
 ## Trạng thái file hiện tại (thư mục `/Users/hoaho/Study/Code/text2sql`)
 
-Git đã init (`git init`, 3 commit đầu tiên) — mọi thay đổi từ đây có thể hoàn tác qua git. Toàn bộ file `.py` bên dưới là **skeleton** (hàm rỗng, `raise NotImplementedError` + TODO comment theo đúng "Việc cần làm" của giai đoạn tương ứng) — chưa có logic thật, đúng tinh thần "tự code, AI chỉ hướng dẫn".
+Git đã init (`git init`, nhiều commit) — mọi thay đổi từ đây có thể hoàn tác qua git. Toàn bộ file `.py` bên dưới là **skeleton hoặc một phần** (xem chi tiết Status từng file) — theo đúng tinh thần "tự code, AI chỉ hướng dẫn". **Danh sách dưới đây mô tả đúng máy đang code hiện tại (Intel, 2026-09-15) — nếu đọc từ máy khác sau khi clone, xem mục "Sau khi clone sang máy mới" ở trên trước.**
 
 ```
-data/raw/*.csv                  [ĐÃ CÓ]    9 file CSV Olist — không cần tải lại
-.env / .env.example             [ĐÃ TẠO]   .env gitignored, .env.example làm template
+data/raw/*.csv                  [ĐÃ CÓ trên máy này] 9 file CSV Olist — GITIGNORED, KHÔNG có sau khi clone máy khác, xem "Sau khi clone sang máy mới"
+.env / .env.example             [ĐÃ TẠO trên máy này] .env GITIGNORED (KHÔNG có sau khi clone), .env.example làm template (CÓ theo git)
 .gitignore                      [ĐÃ TẠO]
 requirements.txt                [ĐÃ TẠO]   liệt kê dep theo từng giai đoạn
 docker-compose.yml       [ĐÃ CÓ]    Postgres 17 + named volume, đã sửa dùng env_file thay vì hard-code
