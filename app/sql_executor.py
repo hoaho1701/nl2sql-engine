@@ -16,8 +16,19 @@ class QueryTimeoutError(SqlExecutionError):
 
 
 def _is_select_only(sql: str) -> bool:
-    """Layer 1: reject anything not starting with "select" after strip().lower()."""
-    return sql.strip().lower().startswith("select")
+    """Layer 1: reject anything not starting with "select" or "with" (CTE) after
+    strip().lower().
+
+    Known gap: a WITH clause can contain a data-modifying CTE, e.g.
+    `WITH x AS (DELETE FROM orders RETURNING *) SELECT * FROM x` — this is a
+    read-only-looking statement that actually deletes rows. No string-level
+    check (including sqlparse's get_type(), which reports "SELECT" for this
+    exact query since it only looks at the outer statement) can catch this
+    reliably. This layer intentionally allows it through; layer 2 (read-only
+    DB role) is the real backstop for this case.
+    """
+    normalized = sql.strip().lower()
+    return normalized.startswith("select") or normalized.startswith("with")
 
 
 def _is_single_statement(sql: str) -> bool:
