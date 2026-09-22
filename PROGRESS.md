@@ -66,7 +66,7 @@ Status dùng 1 trong 3 giá trị: **CHƯA BẮT ĐẦU** / **ĐANG LÀM** / **X
 
 **Trạng thái cuối phiên (2026-09-15)**: 27/27 test pass (`pytest tests/ -v`), git sạch (`git status` clean sau mỗi commit), toàn bộ tiến độ đã ghi chi tiết trong bảng "Trạng thái file hiện tại" bên dưới.
 
-**Repo đã lên GitHub**: `https://github.com/hoaho1701/nl2sql-engine` — hiện đang **Private**, đổi sang Public khi code đủ hoàn chỉnh (`gh repo edit hoaho1701/nl2sql-engine --visibility public`, hoặc qua Settings trên web). Tên repo cố ý khác tên thư mục local (`text2sql`) — xem lý do ở phần lịch sử trò chuyện, không phải nhầm lẫn. **Trên máy M4, `git clone https://github.com/hoaho1701/nl2sql-engine.git` sẽ tự ra thư mục tên `nl2sql-engine/`** (không phải `text2sql`), khớp đúng tên repo — bình thường, không phải lỗi.
+**Repo đã lên GitHub**: `https://github.com/hoaho1701/nl2sql-engine` — đã chuyển sang **Public** từ 2026-09-22 (sớm hơn kế hoạch ban đầu "đợi hoàn chỉnh mới public" — quyết định đổi: public sớm kèm nhãn "Work in Progress" trong README, coi việc build công khai như 1 tín hiệu tích cực thay vì rủi ro, xem `nl2sql-engine-completion-plan.md`). Tên repo cố ý khác tên thư mục local (`text2sql`) — xem lý do ở phần lịch sử trò chuyện, không phải nhầm lẫn. **Trên máy M4, `git clone https://github.com/hoaho1701/nl2sql-engine.git` sẽ tự ra thư mục tên `nl2sql-engine/`** (không phải `text2sql`), khớp đúng tên repo — bình thường, không phải lỗi.
 
 ---
 
@@ -130,7 +130,9 @@ tests/test_api.py          [XONG] Giai đoạn 8 — 3 test cho QueryRequest/Que
 .github/workflows/ci.yml [CHƯA TẠO] Giai đoạn 8 — lint + pytest + docker compose build, tự động mỗi lần push
 results/eval_log.csv     [CHƯA TẠO] Giai đoạn 7 — experiment log, mỗi lần chạy evaluate.py append 1 dòng; nguồn dữ liệu cho dashboard Giai đoạn 9
 README.md                [CHƯA TẠO] Giai đoạn 10 — viết SAU CÙNG, cần số liệu + demo thật, không dịch PROGRESS.md
-LICENSE                  [XONG] Giai đoạn 10 — MIT, tên "Hòa Hồ" (lấy từ git committer tự nhận diện) — ⚠️ TỰ KIỂM TRA LẠI tên/năm trước khi công khai repo, chưa được người dùng xác nhận trực tiếp
+LICENSE                  [XONG] Giai đoạn 10 — MIT, tên "Hồ Quốc Nhân Hoà" — đã tự sửa và xác nhận trực tiếp (2026-09-15), không còn là cảnh báo mở
+README.md                [MỘT PHẦN] Giai đoạn 10 — bản placeholder (2026-09-22), viết SỚM hơn kế hoạch vì repo đã public khi chưa hoàn chỉnh; sẽ thay hẳn bằng bản chính thức (elevator pitch → demo → số liệu → kiến trúc → khác biệt vanna) khi có đủ dữ liệu thật
+nl2sql-engine-completion-plan.md [XONG] Lớp bổ sung ngoài 11 giai đoạn — resume bullet draft, talk-track phỏng vấn, theo dõi rủi ro thời gian (không đánh đổi ràng buộc $0)
 ```
 
 ---
