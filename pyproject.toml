@@ -1,0 +1,21 @@
+[project]
+name = "nl2sql-engine"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.9",
+    "fastapi>=0.142.2",
+    "openai>=3.22.1",
+    "pandas>=3.0.6",
+    "psycopg2-binary>=2.9.13",
+    "python-dotenv>=1.2.3",
+    "sqlalchemy>=2.1.1",
+    "sqlparse>=0.6.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
