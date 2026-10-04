@@ -2,6 +2,8 @@
 
 import urllib.request
 from types import SimpleNamespace
+import chromadb
+import os
 
 import pytest
 
@@ -344,3 +346,144 @@ def test_retrieve_passes_the_k_values_through(seeded):
     text = vector_store.retrieve("How many sellers are there?", k_ddl=1, k_doc=1, k_examples=1)
     assert DDL_SELLERS in text
     assert DDL_ORDERS not in text and DDL_PAYMENTS not in text
+
+
+def test_reset_store_empties_every_collection(store):
+    collections = store()
+    for collection in collections.values():
+        collection.upsert(ids=["a"], documents=["x"], embeddings=[[1.0, 0.0]])
+
+    vector_store.reset_store()
+
+    assert all(c.count() == 0 for c in store().values())
+
+
+def test_reset_store_on_an_empty_store_does_not_fail(chroma_dir):
+    vector_store.reset_store()
+
+
+# --------------------------------------------------------------------------
+# Step 6: seed
+# --------------------------------------------------------------------------
+
+SEED_DDL = ["CREATE TABLE orders (order_id TEXT)", "CREATE TABLE sellers (seller_id TEXT)"]
+SEED_DOCUMENTATION = [
+    "Table orders: one row per order.",
+    "Table sellers: one row per seller.",
+    "Join path: orders to payments through order_id.",
+]
+SEED_EXAMPLES = [{"question": "How many orders are there?", "sql": "SELECT COUNT(*) FROM orders"}]
+
+
+def test_seed_returns_the_number_of_entries_per_collection(store):
+    # Arrange: the sizes (2, 3, 1) differ, so mixing up two collections would show.
+    ddl, documentation, examples = SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES
+
+    # Act
+    counts = vector_store.seed(ddl, documentation, examples)
+
+    # Assert: the returned numbers are right, and they match what the store really holds.
+    assert counts == {"ddl": 2, "documentation": 3, "sql_examples": 1}
+    assert {name: collection.count() for name, collection in store().items()} == counts
+
+
+def test_seed_puts_each_kind_in_its_own_collection(store):
+    vector_store.seed(SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES)
+
+    collections = store()
+    # sorted(): Chroma does not promise any particular order from get().
+    assert sorted(collections["ddl"].get()["documents"]) == sorted(SEED_DDL)
+    assert sorted(collections["documentation"].get()["documents"]) == sorted(SEED_DOCUMENTATION)
+    assert collections["sql_examples"].get()["documents"] == [SEED_EXAMPLES[0]["question"]]
+
+
+def test_seed_stores_the_sql_of_each_example_in_metadata(store):
+    vector_store.seed(SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES)
+
+    metadatas = store()["sql_examples"].get()["metadatas"]
+    assert metadatas == [{"sql": SEED_EXAMPLES[0]["sql"]}]
+
+
+def test_seed_twice_with_the_same_data_keeps_the_same_counts(store):
+    vector_store.seed(SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES)
+    counts = vector_store.seed(SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES)
+
+    assert counts == {"ddl": 2, "documentation": 3, "sql_examples": 1}
+
+
+def test_seed_removes_entries_that_are_no_longer_in_the_data(store):
+    new_ddl = ["CREATE TABLE reviews (review_id TEXT)"]
+    new_documentation = ["Table reviews: one row per review."]
+    new_examples = [{"question": "How many reviews are there?", "sql": "SELECT COUNT(*) FROM reviews"}]
+    vector_store.seed(SEED_DDL, SEED_DOCUMENTATION, SEED_EXAMPLES)
+
+    counts = vector_store.seed(new_ddl, new_documentation, new_examples)
+
+    collections = store()
+    assert counts == {"ddl": 1, "documentation": 1, "sql_examples": 1}
+    assert collections["ddl"].get()["documents"] == new_ddl
+    assert collections["documentation"].get()["documents"] == new_documentation
+    assert collections["sql_examples"].get()["documents"] == [new_examples[0]["question"]]
+
+
+def test_seed_with_empty_lists_returns_zero_counts(store):
+    counts = vector_store.seed([], [], [])
+
+    assert counts == {"ddl": 0, "documentation": 0, "sql_examples": 0}
+
+
+# --------------------------------------------------------------------------
+# _persist_path: where the Chroma store lives
+# --------------------------------------------------------------------------
+
+
+def test_persist_path_is_read_from_the_env_file(tmp_path, monkeypatch):
+    (tmp_path / ".env").write_text("CHROMA_PERSIST_DIR=./store\n")
+    monkeypatch.setattr(vector_store, "REPO_ROOT", tmp_path)
+    # load_dotenv writes to the real os.environ. Touching the variable through monkeypatch
+    # first makes it restore the original (absent) state when the test ends.
+    monkeypatch.setenv("CHROMA_PERSIST_DIR", "placeholder")
+    monkeypatch.delenv("CHROMA_PERSIST_DIR")
+
+    path = vector_store._persist_path()
+
+    assert path == str(tmp_path / "store")
+
+
+def test_persist_path_resolves_a_relative_value_against_the_repo_root(tmp_path, monkeypatch):
+    monkeypatch.setattr(vector_store, "REPO_ROOT", tmp_path)
+    monkeypatch.setenv("CHROMA_PERSIST_DIR", "./chroma_data")
+
+    assert vector_store._persist_path() == str(tmp_path / "chroma_data")
+
+
+def test_persist_path_keeps_an_absolute_value(tmp_path, monkeypatch):
+    elsewhere = tmp_path / "elsewhere"
+    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(elsewhere))
+
+    assert vector_store._persist_path() == str(elsewhere)
+
+
+def test_persist_path_does_not_let_the_env_file_override_an_existing_variable(
+    tmp_path, monkeypatch
+):
+    (tmp_path / ".env").write_text("CHROMA_PERSIST_DIR=./from_file\n")
+    monkeypatch.setattr(vector_store, "REPO_ROOT", tmp_path)
+    monkeypatch.setenv("CHROMA_PERSIST_DIR", "from_env")
+
+    assert vector_store._persist_path() == str(tmp_path / "from_env")
+
+
+def test_retrieve_parts_uses_the_default_k_values(store):
+    # More entries than any default, so the number returned shows which k was used.
+    for number in range(12):
+        vector_store.add_ddl(f"CREATE TABLE orders_{number} (order_id TEXT)")
+        vector_store.add_documentation(f"Table orders_{number}: one row per order.")
+        vector_store.add_sql_example(f"How many orders in batch {number}?", "SELECT 1")
+
+    parts = vector_store.retrieve_parts("How many orders are there?")
+
+    assert len(parts["ddl"]) == vector_store.DEFAULT_K_DDL
+    assert len(parts["documentation"]) == vector_store.DEFAULT_K_DOC
+    assert len(parts["examples"]) == vector_store.DEFAULT_K_EXAMPLES
+

@@ -2,10 +2,29 @@
 
 import hashlib
 import os
+from pathlib import Path
 
 import chromadb
 from dotenv import load_dotenv
 from openai import OpenAI
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Default number of matches taken from each collection. Measured on the Olist schema:
+# the 9 DDL statements total only 2,845 characters and some questions need tables whose
+# names the question never mentions (k_ddl=5 still misses geolocation for a distance
+# question), so all of them are included. With k_doc=3, 3 of 8 probe questions missed the
+# documentation chunk they depend on; k_doc=5 found all 8. Prompt size stays near 1,200 tokens.
+DEFAULT_K_DDL = 9
+DEFAULT_K_DOC = 5
+DEFAULT_K_EXAMPLES = 3
+
+
+def _persist_path() -> str:
+    """Where the Chroma store lives: CHROMA_PERSIST_DIR from .env, relative to the repo root."""
+    load_dotenv(REPO_ROOT / ".env")
+    return str(REPO_ROOT / os.environ["CHROMA_PERSIST_DIR"])
 
 
 def get_chroma_client():
@@ -13,7 +32,7 @@ def get_chroma_client():
 
     Keys: "ddl", "documentation", "sql_examples". Each collection uses cosine distance.
     """
-    client = chromadb.PersistentClient(path=os.environ["CHROMA_PERSIST_DIR"])
+    client = chromadb.PersistentClient(path=_persist_path())
     return {
         name: client.get_or_create_collection(
             name,
@@ -98,7 +117,12 @@ def format_context(parts: dict) -> str:
     return "\n\n".join(sections)
 
 
-def retrieve_parts(question: str, k_ddl: int = 5, k_doc: int = 3, k_examples: int = 3) -> dict:
+def retrieve_parts(
+    question: str,
+    k_ddl: int = DEFAULT_K_DDL,
+    k_doc: int = DEFAULT_K_DOC,
+    k_examples: int = DEFAULT_K_EXAMPLES,
+) -> dict:
     """Embed the question once and return the top-k matches from each collection.
 
     Returns {"ddl": [str], "documentation": [str], "examples": [{"question", "sql"}]},
@@ -122,6 +146,48 @@ def retrieve_parts(question: str, k_ddl: int = 5, k_doc: int = 3, k_examples: in
     return {"ddl": ddl, "documentation": doc, "examples": examples}
 
 
-def retrieve(question: str, k_ddl: int = 5, k_doc: int = 3, k_examples: int = 3) -> str:
+def retrieve(
+    question: str,
+    k_ddl: int = DEFAULT_K_DDL,
+    k_doc: int = DEFAULT_K_DOC,
+    k_examples: int = DEFAULT_K_EXAMPLES,
+) -> str:
     """Embed the question, query top-k from each collection, merge into one context string."""
     return format_context(retrieve_parts(question, k_ddl, k_doc, k_examples))
+
+
+def reset_store() -> None:
+    """Delete the three collections so the next get_chroma_client() starts empty."""
+    client = chromadb.PersistentClient(path=_persist_path())
+    existing = [collection.name for collection in client.list_collections()]
+    for name in ("ddl", "documentation", "sql_examples"):
+        if name in existing:
+            client.delete_collection(name)
+
+
+def seed(ddl_statements, documentation_chunks, examples) -> dict:
+    """Rebuild the store from scratch and return how many entries each collection holds."""
+    reset_store()
+    for statement in ddl_statements:
+        add_ddl(statement)
+    for chunk in documentation_chunks:
+        add_documentation(chunk)
+    for example in examples:
+        add_sql_example(example["question"], example["sql"])
+    collections = get_chroma_client()
+    return {name: collection.count() for name, collection in collections.items()}
+
+
+def main() -> None:
+    """Load the real schema, documentation and training examples into the store."""
+    from app.load_data import get_engine
+    from app.schema_context import build_documentation_chunks, generate_ddl
+    from app.training_examples import TRAINING_EXAMPLES
+
+    counts = seed(generate_ddl(get_engine()), build_documentation_chunks(), TRAINING_EXAMPLES)
+    for name, count in counts.items():
+        print(f"{name}: {count}")
+
+
+if __name__ == "__main__":
+    main()
