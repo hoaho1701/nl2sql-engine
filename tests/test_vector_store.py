@@ -1,9 +1,7 @@
-"""Tests for vector_store, written one step at a time (see the section markers)."""
+"""Tests for vector_store: embeddings, Chroma collections, adding entries, retrieval, seeding."""
 
 import urllib.request
 from types import SimpleNamespace
-import chromadb
-import os
 
 import pytest
 
@@ -19,7 +17,7 @@ def _ollama_is_up() -> bool:
 
 
 # --------------------------------------------------------------------------
-# Step 1: embed / embed_many
+# embed / embed_many
 # --------------------------------------------------------------------------
 
 
@@ -88,7 +86,7 @@ def test_embed_with_real_ollama_returns_768_dimensions():
 
 
 # --------------------------------------------------------------------------
-# Step 2: get_chroma_client (YOUR TURN — these tests start red)
+# get_chroma_client
 # --------------------------------------------------------------------------
 
 
@@ -123,7 +121,7 @@ def test_collections_are_persisted_on_disk(chroma_dir):
 
 
 # --------------------------------------------------------------------------
-# Step 3: make_id, add_ddl, add_documentation, add_sql_example
+# make_id, add_ddl, add_documentation, add_sql_example
 # --------------------------------------------------------------------------
 
 VOCAB = ["order", "seller", "payment", "review", "customer"]
@@ -222,7 +220,7 @@ def test_add_sql_example_with_the_same_question_replaces_the_sql(store):
 
 
 # --------------------------------------------------------------------------
-# Step 4: format_context, retrieve_parts, retrieve
+# format_context, retrieve_parts, retrieve
 # --------------------------------------------------------------------------
 
 DDL_ORDERS = "CREATE TABLE orders (order_id TEXT)"
@@ -348,6 +346,11 @@ def test_retrieve_passes_the_k_values_through(seeded):
     assert DDL_ORDERS not in text and DDL_PAYMENTS not in text
 
 
+# --------------------------------------------------------------------------
+# reset_store
+# --------------------------------------------------------------------------
+
+
 def test_reset_store_empties_every_collection(store):
     collections = store()
     for collection in collections.values():
@@ -363,7 +366,7 @@ def test_reset_store_on_an_empty_store_does_not_fail(chroma_dir):
 
 
 # --------------------------------------------------------------------------
-# Step 6: seed
+# seed
 # --------------------------------------------------------------------------
 
 SEED_DDL = ["CREATE TABLE orders (order_id TEXT)", "CREATE TABLE sellers (seller_id TEXT)"]
@@ -486,4 +489,12 @@ def test_retrieve_parts_uses_the_default_k_values(store):
     assert len(parts["ddl"]) == vector_store.DEFAULT_K_DDL
     assert len(parts["documentation"]) == vector_store.DEFAULT_K_DOC
     assert len(parts["examples"]) == vector_store.DEFAULT_K_EXAMPLES
+
+
+def test_persist_path_raises_when_the_variable_is_set_nowhere(tmp_path, monkeypatch):
+    monkeypatch.setattr(vector_store, "REPO_ROOT", tmp_path)  # a folder with no .env file
+    monkeypatch.delenv("CHROMA_PERSIST_DIR", raising=False)
+
+    with pytest.raises(KeyError, match="CHROMA_PERSIST_DIR"):
+        vector_store._persist_path()
 
