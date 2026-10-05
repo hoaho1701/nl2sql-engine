@@ -1,6 +1,11 @@
 """Execute LLM-generated SQL safely against Postgres (defense in depth, independent layers)."""
 
+import os
 import sqlparse
+import psycopg2
+
+from dotenv import load_dotenv
+from app.vector_store import REPO_ROOT
 
 
 class SqlExecutionError(Exception):
@@ -39,5 +44,38 @@ def _is_single_statement(sql: str) -> bool:
 
 def run_sql_safe(sql: str, max_rows: int = 100, timeout_seconds: float = 5.0):
     """Layer 1 -> layer 2 (connect as read-only role, SET statement_timeout) -> layer 3 ->
-    cursor.fetchmany(max_rows). Catch psycopg2.errors.QueryCanceled -> QueryTimeoutError."""
-    raise NotImplementedError
+    cursor.fetchmany(max_rows). Catch psycopg2.errors.QueryCanceled -> QueryTimeoutError.
+
+    Returns (columns, rows): column names as a list, rows as a list of tuples.
+    """
+    if not _is_select_only(sql):
+        raise UnsafeQueryError("Only SELECT or WITH queries are allowed.")
+
+    if not _is_single_statement(sql):
+        raise UnsafeQueryError("Only a single SQL statement is allowed.")
+
+    load_dotenv(REPO_ROOT / ".env")
+
+    conn = psycopg2.connect(
+        host=os.environ["POSTGRES_HOST"],
+        port=os.environ["POSTGRES_PORT"],
+        dbname=os.environ["POSTGRES_DB"],
+        user=os.environ["POSTGRES_READONLY_USER"],
+        password=os.environ["POSTGRES_READONLY_PASSWORD"],
+        options=f"-c statement_timeout={int(timeout_seconds * 1000)}"
+    )
+
+    try:
+        cur = conn.cursor()
+        cur.execute(sql)
+        columns = [col.name for col in cur.description]
+        rows = cur.fetchmany(max_rows)
+        return (columns, rows)
+    except psycopg2.errors.QueryCanceled as e:
+        raise QueryTimeoutError(f"Query exceeded the {timeout_seconds} s time limit.") from e
+    except psycopg2.errors.InsufficientPrivilege as e:
+        raise UnsafeQueryError(f"Blocked by database permissions: {e}") from e
+    except psycopg2.Error as e:
+        raise SqlExecutionError(str(e)) from e
+    finally:
+        conn.close()
