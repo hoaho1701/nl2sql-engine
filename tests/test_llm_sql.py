@@ -82,3 +82,24 @@ def test_generate_sql_calls_the_model_exactly_once(model):
 
     assert len(model.completions.calls) == 1
     assert len(model.retrieved_for) == 1
+
+
+def test_generate_sql_appends_feedback_after_the_question(model):
+    feedback = [
+        {"role": "assistant", "content": "SELECT nope FROM orders"},
+        {"role": "user", "content": 'column "nope" does not exist'},
+    ]
+
+    llm_sql.generate_sql("How many orders?", feedback=feedback)
+
+    messages = model.completions.calls[0]["messages"]
+    assert messages[1] == {"role": "user", "content": "How many orders?"}
+    assert messages[2:] == feedback
+
+
+def test_generate_sql_retrieves_with_the_original_question_when_given_feedback(model):
+    feedback = [{"role": "assistant", "content": "SELECT nope"}]
+
+    llm_sql.generate_sql("How many orders?", feedback=feedback)
+
+    assert model.retrieved_for == ["How many orders?"]

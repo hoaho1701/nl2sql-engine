@@ -15,9 +15,13 @@ def _get_client() -> OpenAI:
     return OpenAI(base_url=os.environ["OLLAMA_BASE_URL"], api_key="ollama", timeout=120)
 
 
-def generate_sql(question: str) -> str:
-    """Retrieve context, build messages, call Ollama (temperature=0), return raw SQL text."""
-    messages = build_messages(question, retrieve(question))
+def generate_sql(question: str, feedback: list[dict] | None = None) -> str:
+    """Retrieve context, build messages, call Ollama (temperature=0), return raw SQL text.
+
+    feedback: extra chat messages appended after the question (a failed attempt and why it
+    failed). Retrieval always uses the original question.
+    """
+    messages = build_messages(question, retrieve(question)) + (feedback or [])
     response = _get_client().chat.completions.create(
         model=os.environ["OLLAMA_SQL_MODEL"],
         messages=messages,
