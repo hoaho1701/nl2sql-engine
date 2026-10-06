@@ -60,9 +60,9 @@ def _build_feedback(sql: str, error: SqlExecutionError) -> list[dict]:
     ]
 
 
-def answer_question(question: str, max_retries: int = 2) -> Answer:
+def answer_question(question: str, max_retries: int = 2, max_rows: int = 100) -> Answer:
     """generate_sql -> run_sql_safe; on failure, retry with the bad SQL and the error fed back
-    to the model, up to max_retries times. Log each attempt.
+    to the model, up to max_retries times. Log each attempt. max_rows caps the rows fetched.
 
     Retry rules:
     - total attempts are at most max_retries + 1, shared across all kinds of error
@@ -86,7 +86,7 @@ def answer_question(question: str, max_retries: int = 2) -> Answer:
             # The model repeated the SQL that just failed; running it again cannot help.
             raise last_error
         try:
-            columns, rows = run_sql_safe(sql)
+            columns, rows = run_sql_safe(sql, max_rows=max_rows)
         except SqlExecutionError as e:
             attempts.append(Attempt(sql, str(e)))
             logger.warning("attempt %d failed: %s", len(attempts), e)

@@ -156,6 +156,16 @@ def retrieve(
     return format_context(retrieve_parts(question, k_ddl, k_doc, k_examples))
 
 
+def nearest_example_similarity(question: str) -> float | None:
+    """Cosine similarity (1.0 = identical) between the question and the closest stored example
+    question, or None when no examples are stored."""
+    result = get_chroma_client()["sql_examples"].query(
+        query_embeddings=[embed(question)], n_results=1
+    )
+    distances = result["distances"][0]
+    return 1 - distances[0] if distances else None
+
+
 def reset_store() -> None:
     """Delete the three collections so the next get_chroma_client() starts empty."""
     client = chromadb.PersistentClient(path=_persist_path())

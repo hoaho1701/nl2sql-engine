@@ -498,3 +498,23 @@ def test_persist_path_raises_when_the_variable_is_set_nowhere(tmp_path, monkeypa
     with pytest.raises(KeyError, match="CHROMA_PERSIST_DIR"):
         vector_store._persist_path()
 
+
+def test_nearest_example_similarity_is_one_for_an_identical_question(seeded):
+    similarity = vector_store.nearest_example_similarity(EXAMPLE_ORDERS[0])
+    assert similarity == pytest.approx(1.0, abs=1e-6)
+
+
+def test_nearest_example_similarity_is_lower_for_a_different_question(seeded):
+    identical = vector_store.nearest_example_similarity(EXAMPLE_ORDERS[0])
+    different = vector_store.nearest_example_similarity("Which review was written by a customer?")
+    assert different < identical
+
+
+def test_nearest_example_similarity_looks_at_every_stored_example(seeded):
+    # Whichever example matches, the closest one decides the score.
+    similarity = vector_store.nearest_example_similarity(EXAMPLE_SELLERS[0])
+    assert similarity == pytest.approx(1.0, abs=1e-6)
+
+
+def test_nearest_example_similarity_is_none_when_no_examples_are_stored(store):
+    assert vector_store.nearest_example_similarity("How many orders are there?") is None

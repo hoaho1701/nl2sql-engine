@@ -244,3 +244,18 @@ def test_every_attempt_is_logged(pipeline, caplog):
     assert "2" in records[1].getMessage()
     assert records[0].levelno == logging.WARNING
     assert records[1].levelno == logging.INFO
+
+
+# The row cap is forwarded to the executor.
+def test_max_rows_is_passed_to_the_executor(pipeline, monkeypatch):
+    seen = {}
+
+    def run_spy(sql, *args, **kwargs):
+        seen.update(kwargs)
+        return OK
+
+    monkeypatch.setattr(self_correct, "run_sql_safe", run_spy)
+
+    self_correct.answer_question("How many orders?", max_rows=5000)
+
+    assert seen == {"max_rows": 5000}
