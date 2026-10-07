@@ -24,12 +24,17 @@ EVAL_CASES = [
     },
     # -- GROUP BY + top-1 --
     {
-        "question": "Which product category appears in the most distinct orders?",
+        "question": (
+            "Which product category appears in the most distinct orders? "
+            "Use the English category name."
+        ),
         "gold_sql": (
-            "SELECT p.product_category_name, COUNT(DISTINCT oi.order_id) AS order_count "
+            "SELECT t.product_category_name_english, COUNT(DISTINCT oi.order_id) AS order_count "
             "FROM order_items oi "
             "JOIN products p ON oi.product_id = p.product_id "
-            "GROUP BY p.product_category_name "
+            "JOIN product_category_name_translation t "
+            "ON p.product_category_name = t.product_category_name "
+            "GROUP BY t.product_category_name_english "
             "ORDER BY order_count DESC "
             "LIMIT 1;"
         ),
@@ -117,16 +122,18 @@ EVAL_CASES = [
     {
         "question": (
             "What is the total revenue (sum of item price) per product category for "
-            "customers located in the state of SP?"
+            "customers located in the state of SP? Use the English category name."
         ),
         "gold_sql": (
-            "SELECT p.product_category_name, SUM(oi.price) AS total_revenue "
+            "SELECT t.product_category_name_english, SUM(oi.price) AS total_revenue "
             "FROM order_items oi "
             "JOIN orders o ON oi.order_id = o.order_id "
             "JOIN customers c ON o.customer_id = c.customer_id "
             "JOIN products p ON oi.product_id = p.product_id "
+            "JOIN product_category_name_translation t "
+            "ON p.product_category_name = t.product_category_name "
             "WHERE c.customer_state = 'SP' "
-            "GROUP BY p.product_category_name "
+            "GROUP BY t.product_category_name_english "
             "ORDER BY total_revenue DESC;"
         ),
     },
