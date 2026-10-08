@@ -19,3 +19,6 @@ frontend/dist/
 
 # os
 .DS_Store
+
+# local study notes, not part of the repo
+docs/
