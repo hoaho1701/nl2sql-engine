@@ -15,6 +15,23 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  
+  backend:
+    build: .
+    container_name: text2sql-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./chroma_data:/app/chroma_data
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -1,0 +1,14 @@
+.venv
+.git
+.env
+.pytest_cache
+
+/data
+/chroma_data
+/results
+/tests
+/frontend
+/docs
+
+**/__pycache__
+**/*.pyc
