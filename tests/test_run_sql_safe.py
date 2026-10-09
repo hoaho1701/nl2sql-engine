@@ -117,3 +117,10 @@ def test_connections_are_closed_after_errors():
             run_sql_safe("SELECT nope FROM orders")
         failures.append(excinfo)
     assert _open_readonly_connections() == before
+
+
+# SELECT ... INTO creates a table, and it passes layers 1 and 3, so only the role can stop it.
+def test_select_into_is_blocked_by_the_role():
+    with pytest.raises(UnsafeQueryError) as excinfo:
+        run_sql_safe("SELECT * INTO ci_probe_copy FROM orders")
+    assert type(excinfo.value.__cause__).__name__ == "InsufficientPrivilege"
