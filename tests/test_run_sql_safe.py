@@ -15,8 +15,6 @@ from app.sql_executor import (
     run_sql_safe,
 )
 
-ORDERS_ROWS = 99_441
-
 
 def _database_is_up() -> bool:
     try:
@@ -48,27 +46,31 @@ def _orders_count() -> int:
 def test_select_returns_columns_and_rows():
     columns, rows = run_sql_safe("SELECT count(*) AS n FROM orders")
     assert columns == ["n"]
-    assert rows == [(ORDERS_ROWS,)]
+    assert rows == [(_orders_count(),)]
 
 
 # Layer 1 rejects non-SELECT before touching the database.
 def test_delete_is_rejected_and_data_is_intact():
+    before = _orders_count()
+    assert before > 0
     with pytest.raises(UnsafeQueryError):
         run_sql_safe("DELETE FROM orders")
-    assert _orders_count() == ORDERS_ROWS
+    assert _orders_count() == before
 
 
 # Cap the rows pulled into Python.
 def test_row_limit_caps_rows_fetched():
-    _, rows = run_sql_safe("SELECT * FROM geolocation", max_rows=5)
+    _, rows = run_sql_safe("SELECT * FROM generate_series(1, 100)", max_rows=5)
     assert len(rows) == 5
 
 
 # Stacked queries are rejected by the statement-count layer.
 def test_stacked_query_is_rejected_and_data_is_intact():
+    before = _orders_count()
+    assert before > 0
     with pytest.raises(UnsafeQueryError):
         run_sql_safe("SELECT 1; DROP TABLE orders")
-    assert _orders_count() == ORDERS_ROWS
+    assert _orders_count() == before
 
 
 # A slow query is cut off by statement_timeout.
@@ -89,11 +91,13 @@ def test_sql_error_is_wrapped_and_keeps_the_original_message():
 
 # The data-modifying CTE passes layers 1 and 3, so only the role can stop it.
 def test_data_modifying_cte_is_blocked_by_the_role():
+    before = _orders_count()
+    assert before > 0
     sql = "WITH x AS (DELETE FROM orders RETURNING *) SELECT count(*) FROM x"
     with pytest.raises(UnsafeQueryError) as excinfo:
         run_sql_safe(sql)
     assert type(excinfo.value.__cause__).__name__ == "InsufficientPrivilege"
-    assert _orders_count() == ORDERS_ROWS
+    assert _orders_count() == before
 
 
 # The timeout comes from the argument, not a fixed value: a 1 s query must pass with a 3 s limit.

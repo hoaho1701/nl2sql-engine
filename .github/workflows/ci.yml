@@ -20,10 +20,28 @@ jobs:
       OLLAMA_SQL_MODEL: qwen2.5-coder:7b
       OLLAMA_EMBED_MODEL: nomic-embed-text
       CHROMA_PERSIST_DIR: ./chroma_data
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: text2sql
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: text2sql
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U text2sql -d text2sql"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --locked
+      - run: uv run python -m tests.prepare_database
+        env:
+          ALLOW_DROP_TABLES: "1"
+      - run: uv run python -m app.create_readonly_role
       - run: uv run pytest -q
 
   frontend:
