@@ -12,6 +12,7 @@ from pydantic import BaseModel, StringConstraints
 from app.self_correct import answer_question
 from app.sql_executor import QueryTimeoutError, SqlExecutionError, UnsafeQueryError
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 app = FastAPI()

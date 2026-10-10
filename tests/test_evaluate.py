@@ -92,10 +92,10 @@ def world(monkeypatch):
     return world
 
 
-def add_case(world, n, gold=ONE, predicted=ONE):
+def add_case(world, n, gold=ONE, predicted=ONE, subset="core"):
     """Add case n: question "Qn", gold SQL "GOLDn", predicted SQL "PREDn"."""
     question, gold_sql, predicted_sql = f"Q{n}", f"GOLD{n}", f"PRED{n}"
-    world.cases.append({"question": question, "gold_sql": gold_sql})
+    world.cases.append({"question": question, "gold_sql": gold_sql, "subset": subset})
     world.predicted[question] = predicted_sql
     world.outcomes[gold_sql] = gold
     world.outcomes[predicted_sql] = predicted
@@ -198,12 +198,47 @@ def test_infrastructure_errors_stop_the_run(world, monkeypatch):
         ev.evaluate()
 
 
-def test_an_empty_eval_set_gives_zero_accuracy(world):
+def test_an_empty_eval_set_is_refused(world):
+    with pytest.raises(ValueError):
+        ev.evaluate()
+
+
+def test_evaluate_runs_only_the_default_subsets(world):
+    add_case(world, 1, subset="core")
+    add_case(world, 2, subset="dev")
+    add_case(world, 3, subset="heldout")
+
     summary = ev.evaluate()
 
-    assert summary["n_cases"] == 0
-    assert summary["accuracy"] == 0.0
-    assert summary["results"] == []
+    assert [r["question"] for r in summary["results"]] == ["Q1", "Q2"]
+
+
+def test_evaluate_can_run_the_heldout_subset_alone(world):
+    add_case(world, 1, subset="core")
+    add_case(world, 2, subset="heldout")
+
+    summary = ev.evaluate(subsets=("heldout",))
+
+    assert [r["question"] for r in summary["results"]] == ["Q2"]
+
+
+def test_select_cases_rejects_an_unknown_subset(world):
+    add_case(world, 1)
+    with pytest.raises(ValueError):
+        ev.select_cases(("core", "typo"))
+
+
+def test_select_cases_refuses_heldout_mixed_with_other_subsets(world):
+    add_case(world, 1, subset="core")
+    add_case(world, 2, subset="heldout")
+    with pytest.raises(ValueError):
+        ev.select_cases(("core", "heldout"))
+
+
+def test_select_cases_fails_when_nothing_matches(world):
+    add_case(world, 1, subset="core")
+    with pytest.raises(ValueError):
+        ev.select_cases(("dev",))
 
 
 def test_without_self_correction_the_model_is_called_directly(world):
@@ -293,8 +328,9 @@ def logged(monkeypatch, tmp_path):
     )
     monkeypatch.setenv("OLLAMA_SQL_MODEL", "test-model")
     monkeypatch.setattr(ev, "LOG_PATH", log.path)
-    monkeypatch.setattr(ev, "EVAL_CASES", [{"question": f"Q{i}", "gold_sql": ""} for i in range(4)])
-    monkeypatch.setattr(ev, "evaluate", lambda use_self_correction=False: log.summary)
+    monkeypatch.setattr(ev, "EVAL_CASES", [{"question": f"Q{i}", "gold_sql": "", "subset": "core"} for i in range(4)])
+    monkeypatch.setattr(ev, "evaluate", lambda use_self_correction=False, subsets=ev.DEFAULT_SUBSETS: log.summary)
+    monkeypatch.setattr(ev, "_git_commit", lambda: "abc1234")
     monkeypatch.setattr(ev, "nearest_example_similarity", lambda q: log.similarities.get(q, 0.5))
     return log
 
@@ -350,3 +386,46 @@ def test_questions_without_a_similarity_are_ignored_in_the_leakage_measurement(l
     row = read_log(logged.path)[0]
     assert row["max_leak_similarity"] == ""
     assert row["n_leak_over_threshold"] == "0"
+
+
+def test_run_and_log_records_version_subset_and_commit(logged):
+    ev.run_and_log(subsets=("core", "dev"))
+
+    row = read_log(logged.path)[0]
+    assert row["eval_version"] == str(ev.EVAL_VERSION)
+    assert row["subset"] == "core+dev"
+    assert row["git_commit"] == "abc1234"
+
+
+def test_a_log_with_an_old_header_is_refused(logged):
+    logged.path.parent.mkdir(parents=True)
+    logged.path.write_text("timestamp,model\n", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        ev.run_and_log()
+
+    assert logged.path.read_text(encoding="utf-8") == "timestamp,model\n"
+
+
+def _fake_git(monkeypatch, head="abc1234", status=""):
+    def fake_run(cmd, **kwargs):
+        out = head if "rev-parse" in cmd else status
+        return SimpleNamespace(stdout=out + "\n")
+    monkeypatch.setattr(ev.subprocess, "run", fake_run)
+
+
+def test_git_commit_is_the_short_hash_when_the_tree_is_clean(monkeypatch):
+    _fake_git(monkeypatch)
+    assert ev._git_commit() == "abc1234"
+
+
+def test_git_commit_is_marked_dirty_when_files_changed(monkeypatch):
+    _fake_git(monkeypatch, status=" M app/evaluate.py")
+    assert ev._git_commit() == "abc1234+dirty"
+
+
+def test_git_commit_is_unknown_when_git_fails(monkeypatch):
+    def boom(cmd, **kwargs):
+        raise FileNotFoundError("git")
+    monkeypatch.setattr(ev.subprocess, "run", boom)
+    assert ev._git_commit() == "unknown"

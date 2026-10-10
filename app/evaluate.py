@@ -3,12 +3,13 @@
 import argparse
 import csv
 import os
+import subprocess
 from collections import Counter
 from datetime import datetime
 
 from dotenv import load_dotenv
 
-from app.eval_test_set import EVAL_CASES
+from app.eval_test_set import EVAL_CASES, EVAL_VERSION
 from app.llm_sql import generate_sql
 from app.self_correct import answer_question
 from app.sql_executor import SqlExecutionError, run_sql_safe
@@ -32,7 +33,26 @@ LOG_COLUMNS = [
     "n_exec_errors",
     "max_leak_similarity",
     "n_leak_over_threshold",
+    "eval_version",
+    "subset",
+    "git_commit",
 ]
+
+DEFAULT_SUBSETS = ("core", "dev")        # "heldout" is never part of the default
+ALL_SUBSETS = ("core", "dev", "heldout")
+
+
+def select_cases(subsets) -> list[dict]:
+    """Return the cases in the given subsets; fail loudly on a typo, an empty result or a mix with heldout."""
+    unknown = [s for s in subsets if s not in ALL_SUBSETS]
+    if unknown:
+        raise ValueError(f"unknown subset(s): {unknown}")
+    if "heldout" in subsets and len(subsets) > 1:
+        raise ValueError("run the heldout subset on its own")
+    cases = [case for case in EVAL_CASES if case["subset"] in subsets]
+    if not cases:
+        raise ValueError("no eval case matches these subsets")
+    return cases
 
 
 def normalize_result(rows, expected_column_count: int | None = None) -> Counter:
@@ -42,7 +62,7 @@ def normalize_result(rows, expected_column_count: int | None = None) -> Counter:
     return Counter(rows)
 
 
-def evaluate(use_self_correction: bool = False) -> dict:
+def evaluate(use_self_correction: bool = False, subsets=DEFAULT_SUBSETS) -> dict:
     """Run every case in EVAL_CASES and compare the predicted result with the gold result.
 
     Returns {"n_cases", "n_correct", "accuracy", "n_exec_errors", "results"}, where results
@@ -58,7 +78,7 @@ def evaluate(use_self_correction: bool = False) -> dict:
     """
     results = []
     n_exec_errors = 0
-    for case in EVAL_CASES:
+    for case in select_cases(subsets):
         question = case["question"]
         gold_columns, gold_rows = run_sql_safe(case["gold_sql"], max_rows=EVAL_MAX_ROWS)
         sql = None
@@ -85,10 +105,34 @@ def evaluate(use_self_correction: bool = False) -> dict:
             "accuracy": n_correct/len(results) if len(results) else 0.0, "n_exec_errors": n_exec_errors, "results": results}
 
 
+def _git_commit() -> str:
+    """Short hash of HEAD, with "+dirty" if tracked code changed; "unknown" when git is unavailable.
+
+    The log file itself is excluded, otherwise every run would make the next one look dirty.
+    """
+    try:
+        head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=REPO_ROOT,
+                              capture_output=True, text=True, check=True).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--", ".", ":(exclude)results/eval_log.csv"],
+            cwd=REPO_ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return head + ("+dirty" if status else "")
+
+
 def _append_log_row(row: dict) -> None:
-    """Append one row to the experiment log, writing the header when the file is new."""
+    """Append one row to the experiment log, writing the header when the file is new.
+
+    An existing file with a different header is refused: appending would silently shift columns.
+    """
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_header = not LOG_PATH.exists() or LOG_PATH.stat().st_size == 0
+    if not write_header:
+        with LOG_PATH.open(encoding="utf-8") as f:
+            existing = f.readline().strip().split(",")
+        if existing != LOG_COLUMNS:
+            raise ValueError(f"{LOG_PATH} has columns {existing}, expected {LOG_COLUMNS}; migrate the file first")
     with LOG_PATH.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=LOG_COLUMNS)
         if write_header:
@@ -96,12 +140,12 @@ def _append_log_row(row: dict) -> None:
         writer.writerow(row)
 
 
-def run_and_log(use_self_correction: bool = False, config_description: str = "") -> dict:
+def run_and_log(use_self_correction: bool = False, config_description: str = "", subsets=DEFAULT_SUBSETS) -> dict:
     """Evaluate, measure possible leakage of training examples, and log the run."""
     load_dotenv(REPO_ROOT / ".env")
-    summary = evaluate(use_self_correction)
+    summary = evaluate(use_self_correction, subsets)
 
-    similarities = [nearest_example_similarity(case["question"]) for case in EVAL_CASES]
+    similarities = [nearest_example_similarity(case["question"]) for case in select_cases(subsets)]
     similarities = [value for value in similarities if value is not None]
 
     row = {
@@ -115,6 +159,9 @@ def run_and_log(use_self_correction: bool = False, config_description: str = "")
         "n_exec_errors": summary["n_exec_errors"],
         "max_leak_similarity": round(max(similarities), 4) if similarities else "",
         "n_leak_over_threshold": sum(value >= LEAKAGE_THRESHOLD for value in similarities),
+        "eval_version": EVAL_VERSION,
+        "subset": "+".join(subsets),
+        "git_commit": _git_commit(),
     }
     _append_log_row(row)
     return row
@@ -124,8 +171,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Measure execution accuracy on the eval set.")
     parser.add_argument("--self-correct", action="store_true", help="use the retry loop")
     parser.add_argument("--description", default="", help="one line describing this run")
+    parser.add_argument("--subsets", nargs="+", choices=ALL_SUBSETS, default=list(DEFAULT_SUBSETS))
     args = parser.parse_args()
-    row = run_and_log(args.self_correct, args.description)
+    row = run_and_log(args.self_correct, args.description, args.subsets)
     print(
         f"{row['n_correct']}/{row['n_cases']} correct (accuracy {row['accuracy']}), "
         f"{row['n_exec_errors']} execution errors, "

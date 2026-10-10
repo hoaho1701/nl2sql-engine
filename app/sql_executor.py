@@ -68,6 +68,8 @@ def run_sql_safe(sql: str, max_rows: int = 100, timeout_seconds: float = 5.0):
     try:
         cur = conn.cursor()
         cur.execute(sql)
+        if cur.description is None:
+            raise SqlExecutionError("The statement did not return any rows.")
         columns = [col.name for col in cur.description]
         rows = cur.fetchmany(max_rows)
         return (columns, rows)

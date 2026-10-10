@@ -124,3 +124,9 @@ def test_select_into_is_blocked_by_the_role():
     with pytest.raises(UnsafeQueryError) as excinfo:
         run_sql_safe("SELECT * INTO ci_probe_copy FROM orders")
     assert type(excinfo.value.__cause__).__name__ == "InsufficientPrivilege"
+
+
+# A temp table is allowed for the role, but the statement returns no rows, so it is reported as an error.
+def test_a_statement_without_a_result_set_is_an_error_not_a_crash():
+    with pytest.raises(SqlExecutionError, match="did not return any rows"):
+        run_sql_safe("SELECT * INTO TEMP ci_probe_tmp FROM orders")
