@@ -111,13 +111,14 @@ def evaluate(use_self_correction: bool = False, subsets=DEFAULT_SUBSETS) -> dict
 def _git_commit() -> str:
     """Short hash of HEAD, with "+dirty" if tracked code changed; "unknown" when git is unavailable.
 
-    The log file itself is excluded, otherwise every run would make the next one look dirty.
+    The log file and the per-run files are excluded, otherwise every run would make the next one look dirty.
     """
     try:
         head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=REPO_ROOT,
                               capture_output=True, text=True, check=True).stdout.strip()
         status = subprocess.run(
-            ["git", "status", "--porcelain", "--", ".", ":(exclude)results/eval_log.csv"],
+            ["git", "status", "--porcelain", "--", ".",
+             ":(exclude)results/eval_log.csv", ":(exclude)results/runs"],
             cwd=REPO_ROOT, capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return "unknown"

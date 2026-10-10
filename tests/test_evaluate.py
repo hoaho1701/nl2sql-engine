@@ -459,3 +459,18 @@ def test_the_run_file_holds_the_log_row_and_every_case(logged):
     assert saved["row"] == json.loads(json.dumps(row))
     assert [r["id"] for r in saved["results"]] == ["C0", "C1", "C2", "C3"]
     assert saved["results"][0]["correct"] is False
+
+
+def test_git_commit_ignores_the_log_and_the_run_files(monkeypatch):
+    seen = []
+
+    def fake_run(cmd, **kwargs):
+        seen.append(cmd)
+        return SimpleNamespace(stdout="abc1234\n")
+    monkeypatch.setattr(ev.subprocess, "run", fake_run)
+
+    ev._git_commit()
+
+    status_cmd = next(c for c in seen if "status" in c)
+    assert ":(exclude)results/eval_log.csv" in status_cmd
+    assert ":(exclude)results/runs" in status_cmd

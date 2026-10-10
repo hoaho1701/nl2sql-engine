@@ -9,3 +9,5 @@ timestamp,config_description,model,use_self_correction,n_cases,n_correct,accurac
 2026-10-07T16:04:39,model comparison on eval v2: llama3:8b; with self-correction,llama3:8b,True,18,14,0.7778,0,0.881,0,2,core,
 2026-10-10T16:49:04,"baseline v3, no self-correction",qwen2.5-coder:7b,False,32,21,0.6562,6,0.881,0,3,core+dev,783a27d
 2026-10-10T16:51:26,"baseline v3, with self-correction",qwen2.5-coder:7b,True,32,21,0.6562,1,0.881,0,3,core+dev,783a27d
+2026-10-10T17:05:03,"baseline v3 with per-case file, no self-correction",qwen2.5-coder:7b,False,32,21,0.6562,6,0.881,0,3,core+dev,2a7c056
+2026-10-10T17:07:13,"baseline v3 with per-case file, with self-correction",qwen2.5-coder:7b,True,32,21,0.6562,1,0.881,0,3,core+dev,2a7c056+dirty

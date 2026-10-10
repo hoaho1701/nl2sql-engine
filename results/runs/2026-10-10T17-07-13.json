@@ -1,0 +1,339 @@
+{
+  "row": {
+    "timestamp": "2026-10-10T17:07:13",
+    "config_description": "baseline v3 with per-case file, with self-correction",
+    "model": "qwen2.5-coder:7b",
+    "use_self_correction": true,
+    "n_cases": 32,
+    "n_correct": 21,
+    "accuracy": 0.6562,
+    "n_exec_errors": 1,
+    "max_leak_similarity": 0.881,
+    "n_leak_over_threshold": 0,
+    "eval_version": 3,
+    "subset": "core+dev",
+    "git_commit": "2a7c056+dirty"
+  },
+  "results": [
+    {
+      "id": "Q01",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many orders are there in total?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders",
+      "attempts": 1
+    },
+    {
+      "id": "Q02",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many orders have been delivered?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_status = 'delivered';",
+      "attempts": 1
+    },
+    {
+      "id": "Q03",
+      "kind": "fanout",
+      "subset": "core",
+      "question": "What is the average review score for orders paid by credit card?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT AVG(r.review_score) AS avg_review_score FROM order_reviews r JOIN order_payments p ON r.order_id = p.order_id WHERE p.payment_type = 'credit_card';",
+      "attempts": 1
+    },
+    {
+      "id": "Q04",
+      "kind": "ranking",
+      "subset": "core",
+      "question": "Which product category appears in the most distinct orders? Use the English category name.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT t.product_category_name_english, COUNT(DISTINCT order_id) AS distinct_orders FROM order_items oi JOIN products p ON p.product_id = oi.product_id JOIN product_category_name_translation t ON t.product_category_name = p.product_category_name GROUP BY t.product_category_name_english ORDER BY distinct_orders DESC LIMIT 1;",
+      "attempts": 1
+    },
+    {
+      "id": "Q05",
+      "kind": "null",
+      "subset": "core",
+      "question": "How many products have no category assigned?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM products WHERE product_category_name IS NULL;",
+      "attempts": 1
+    },
+    {
+      "id": "Q06",
+      "kind": "null",
+      "subset": "core",
+      "question": "How many orders have not yet been delivered to the customer?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_status = 'created' OR order_status = 'processing' OR order_status = 'shipped';",
+      "attempts": 1
+    },
+    {
+      "id": "Q07",
+      "kind": "null",
+      "subset": "core",
+      "question": "How many reviews have no comment message written?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM order_reviews WHERE review_comment_message IS NULL;",
+      "attempts": 1
+    },
+    {
+      "id": "Q08",
+      "kind": "fanout",
+      "subset": "core",
+      "question": "How many distinct zip code prefixes appear in the geolocation table?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(DISTINCT geolocation_zip_code_prefix) FROM geolocation",
+      "attempts": 1
+    },
+    {
+      "id": "Q09",
+      "kind": "fanout",
+      "subset": "core",
+      "question": "What is the average latitude and longitude of sellers, using their zip code prefix to look up geolocation coordinates?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT AVG(g.geolocation_lat) AS avg_lat, AVG(g.geolocation_lng) AS avg_lng FROM sellers s JOIN geolocation g ON s.seller_zip_code_prefix = g.geolocation_zip_code_prefix",
+      "attempts": 1
+    },
+    {
+      "id": "Q10",
+      "kind": "other",
+      "subset": "core",
+      "question": "Which customers (by unique id) have placed more than one order?",
+      "correct": false,
+      "error": "column \"customer_unique_id\" does not exist\nLINE 1: SELECT customer_unique_id FROM orders GROUP BY customer_uniq...\n               ^\n",
+      "sql": null,
+      "attempts": null
+    },
+    {
+      "id": "Q11",
+      "kind": "other",
+      "subset": "core",
+      "question": "What is the total price and total freight value across all order items?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT SUM(price) AS total_price, SUM(freight_value) AS total_freight FROM order_items",
+      "attempts": 1
+    },
+    {
+      "id": "Q12",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many orders were purchased in January 2018?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2018-02-01';",
+      "attempts": 1
+    },
+    {
+      "id": "Q13",
+      "kind": "ranking",
+      "subset": "core",
+      "question": "Which seller has the highest total sales (sum of item price)?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT s.seller_id, s.seller_state, SUM(oi.price) AS total_sales FROM sellers s JOIN order_items oi ON s.seller_id = oi.seller_id GROUP BY s.seller_id, s.seller_state ORDER BY total_sales DESC LIMIT 1;",
+      "attempts": 2
+    },
+    {
+      "id": "Q14",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many orders have a delivery date recorded that is later than the estimated delivery date, regardless of order status?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date > order_estimated_delivery_date",
+      "attempts": 1
+    },
+    {
+      "id": "Q15",
+      "kind": "other",
+      "subset": "core",
+      "question": "What is the total revenue (sum of item price) per product category for customers located in the state of SP? Use the English category name.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT t.product_category_name_english, SUM(oi.price) AS total_revenue FROM order_items oi JOIN products p ON p.product_id = oi.product_id JOIN product_category_name_translation t ON t.product_category_name = p.product_category_name JOIN orders o ON o.order_id = oi.order_id JOIN customers c ON c.customer_id = o.customer_id WHERE c.customer_state = 'SP' GROUP BY t.product_category_name_english ORDER BY total_revenue DESC;",
+      "attempts": 1
+    },
+    {
+      "id": "Q16",
+      "kind": "other",
+      "subset": "core",
+      "question": "List all distinct payment types used.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT DISTINCT payment_type FROM order_payments",
+      "attempts": 1
+    },
+    {
+      "id": "Q17",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many orders are there for each order status?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT order_status, COUNT(*) FROM orders GROUP BY order_status;",
+      "attempts": 1
+    },
+    {
+      "id": "Q18",
+      "kind": "other",
+      "subset": "core",
+      "question": "How many sellers are located in each state?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT s.seller_state, COUNT(s.seller_id) AS total_sellers FROM sellers s JOIN geolocation g ON s.seller_zip_code_prefix = g.geolocation_zip_code_prefix GROUP BY s.seller_state ORDER BY total_sellers DESC;",
+      "attempts": 1
+    },
+    {
+      "id": "F3",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "What is the total freight value of orders that were paid by credit card?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT SUM(oi.freight_value) AS total_freight FROM order_items oi JOIN order_payments op ON op.order_id = oi.order_id WHERE op.payment_type = 'credit_card'",
+      "attempts": 1
+    },
+    {
+      "id": "F4",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "What is the average total payment value per order, for orders that have more than one item? Round to 2 decimals.",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT AVG(total_payment_value) AS avg_total_payment_value FROM ( SELECT order_payments.order_id, SUM(order_payments.payment_value) AS total_payment_value FROM order_payments JOIN order_items ON order_payments.order_id = order_items.order_id GROUP BY order_payments.order_id HAVING COUNT(order_items.order_item_id) > 1 ) AS orders_with_multiple_items",
+      "attempts": 3
+    },
+    {
+      "id": "F5",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "What is the total price of items in orders that received a review score of 5?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT SUM(oi.price) AS total_price FROM order_items oi JOIN order_reviews orr ON oi.order_id = orr.order_id WHERE orr.review_score = 5;",
+      "attempts": 3
+    },
+    {
+      "id": "F6",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "How many customers live in a zip code prefix that appears in the geolocation table?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(DISTINCT customer_id) FROM customers WHERE customer_zip_code_prefix IN (SELECT DISTINCT geolocation_zip_code_prefix FROM geolocation)",
+      "attempts": 1
+    },
+    {
+      "id": "F8",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "What is the average latitude and longitude of customers in the state of RJ, using their zip code prefix to look up geolocation coordinates? Round both to 4 decimals.",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT ROUND(AVG(g.geolocation_lat)::numeric, 4) AS avg_lat, ROUND(AVG(g.geolocation_lng)::numeric, 4) AS avg_lng FROM customers c JOIN geolocation g ON c.customer_zip_code_prefix = g.geolocation_zip_code_prefix WHERE c.customer_state = 'RJ'",
+      "attempts": 2
+    },
+    {
+      "id": "F9",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "How many order items belong to orders that were paid with a voucher?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM order_items WHERE order_id IN (SELECT order_id FROM order_payments WHERE payment_type = 'voucher')",
+      "attempts": 1
+    },
+    {
+      "id": "F11",
+      "kind": "fanout",
+      "subset": "dev",
+      "question": "What is the average price of items in orders that were paid in more than 5 installments? Round to 2 decimals.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT ROUND(AVG(price), 2) AS avg_item_price FROM order_items WHERE order_id IN (SELECT order_id FROM order_payments WHERE payment_installments > 5)",
+      "attempts": 1
+    },
+    {
+      "id": "C1",
+      "kind": "control",
+      "subset": "dev",
+      "question": "What is the total payment value of orders placed by customers in the state of SP?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT SUM(op.payment_value) AS total_payment_value\nFROM order_payments op\nJOIN orders o ON op.order_id = o.order_id\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state = 'SP';",
+      "attempts": 1
+    },
+    {
+      "id": "N3",
+      "kind": "null",
+      "subset": "dev",
+      "question": "How many delivered orders have no delivery date recorded?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_status = 'delivered' AND order_delivered_customer_date IS NULL;",
+      "attempts": 1
+    },
+    {
+      "id": "N4",
+      "kind": "null",
+      "subset": "dev",
+      "question": "What is the average weight in grams of products that have no category assigned? Round to 2 decimals.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT ROUND(AVG(product_weight_g), 2) FROM products WHERE product_category_name IS NULL",
+      "attempts": 1
+    },
+    {
+      "id": "N5",
+      "kind": "null",
+      "subset": "dev",
+      "question": "How many orders have no approval timestamp recorded?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_approved_at IS NULL;",
+      "attempts": 1
+    },
+    {
+      "id": "D2",
+      "kind": "definition",
+      "subset": "dev",
+      "question": "How many distinct customers, by unique id, placed orders that were purchased in 2017?",
+      "correct": false,
+      "error": null,
+      "sql": "SELECT COUNT(DISTINCT customer_id) FROM orders WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2018-01-01'",
+      "attempts": 2
+    },
+    {
+      "id": "D3",
+      "kind": "definition",
+      "subset": "dev",
+      "question": "Among delivered orders that have a delivery date recorded, what percentage arrived later than the estimated delivery date? Round to 2 decimals.",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE order_delivered_customer_date > order_estimated_delivery_date) / COUNT(*), 2) AS late_delivery_percentage FROM orders WHERE order_status = 'delivered' AND order_delivered_customer_date IS NOT NULL;",
+      "attempts": 1
+    },
+    {
+      "id": "R3",
+      "kind": "ranking",
+      "subset": "dev",
+      "question": "Which 5 sellers have the most distinct orders, and how many orders does each have?",
+      "correct": true,
+      "error": null,
+      "sql": "SELECT seller_id, COUNT(DISTINCT order_id) AS distinct_orders FROM order_items GROUP BY seller_id ORDER BY distinct_orders DESC LIMIT 5",
+      "attempts": 1
+    }
+  ]
+}
