@@ -243,7 +243,7 @@ EVAL_CASES = [
         "kind": "fanout",
         "question": (
             "What is the average total payment value per order, for orders that have more than "
-            "one item?"
+            "one item? Round to 2 decimals."
         ),
         "gold_sql": (
             "SELECT ROUND(AVG(t.total)::numeric, 2) FROM (SELECT order_id, SUM(payment_value) AS "
@@ -277,7 +277,7 @@ EVAL_CASES = [
         "kind": "fanout",
         "question": (
             "What is the average latitude and longitude of customers in the state of RJ, using "
-            "their zip code prefix to look up geolocation coordinates?"
+            "their zip code prefix to look up geolocation coordinates? Round both to 4 decimals."
         ),
         "gold_sql": (
             "SELECT ROUND(AVG(g.lat)::numeric, 4), ROUND(AVG(g.lng)::numeric, 4) FROM customers c "
@@ -302,7 +302,7 @@ EVAL_CASES = [
         "kind": "fanout",
         "question": (
             "What is the average price of items in orders that were paid in more than 5 "
-            "installments?"
+            "installments? Round to 2 decimals."
         ),
         "gold_sql": (
             "SELECT ROUND(AVG(price)::numeric, 2) FROM order_items WHERE order_id IN (SELECT "
@@ -334,7 +334,10 @@ EVAL_CASES = [
         "id": "N4",
         "subset": "dev",
         "kind": "null",
-        "question": "What is the average weight in grams of products that have no category assigned?",
+        "question": (
+            "What is the average weight in grams of products that have no category assigned? "
+            "Round to 2 decimals."
+        ),
         "gold_sql": (
             "SELECT ROUND(AVG(product_weight_g)::numeric, 2) FROM products WHERE "
             "product_category_name IS NULL;"
@@ -462,7 +465,7 @@ EVAL_CASES = [
         "kind": "definition",
         "question": (
             "What is the average order value, where the order value is the sum of item price plus "
-            "freight value of the order?"
+            "freight value of the order? Round to 2 decimals."
         ),
         "gold_sql": (
             "SELECT ROUND(AVG(v)::numeric, 2) FROM (SELECT order_id, SUM(price + freight_value) "
