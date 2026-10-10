@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import json
 import os
 import subprocess
 from collections import Counter
@@ -22,6 +23,7 @@ EVAL_MAX_ROWS = 100_000
 LEAKAGE_THRESHOLD = 0.90
 
 LOG_PATH = REPO_ROOT / "results" / "eval_log.csv"
+RUNS_DIR = REPO_ROOT / "results" / "runs"   # one JSON file per run, named after the log row's timestamp
 LOG_COLUMNS = [
     "timestamp",
     "config_description",
@@ -66,7 +68,7 @@ def evaluate(use_self_correction: bool = False, subsets=DEFAULT_SUBSETS) -> dict
     """Run every case in EVAL_CASES and compare the predicted result with the gold result.
 
     Returns {"n_cases", "n_correct", "accuracy", "n_exec_errors", "results"}, where results
-    has one dict per case: {"question", "correct", "error", "sql", "attempts"}.
+    has one dict per case: {"id", "kind", "subset", "question", "correct", "error", "sql", "attempts"}.
 
     Rules:
     - predicted SQL comes from generate_sql + run_sql_safe, or from answer_question when
@@ -98,7 +100,8 @@ def evaluate(use_self_correction: bool = False, subsets=DEFAULT_SUBSETS) -> dict
         except SqlExecutionError as e:
             error = str(e)
             n_exec_errors += 1
-        results.append({"question": question, "correct": correct,
+        results.append({"id": case["id"], "kind": case["kind"], "subset": case["subset"],
+                        "question": question, "correct": correct,
                         "error": error, "sql": sql, "attempts": attempts})
     n_correct = sum(r["correct"] for r in results)
     return {"n_cases": len(results), "n_correct": n_correct,
@@ -140,6 +143,14 @@ def _append_log_row(row: dict) -> None:
         writer.writerow(row)
 
 
+def _write_run_file(row: dict, results: list[dict]) -> None:
+    """Save the per-case results of one run next to the log; the file name is the row's timestamp."""
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    path = RUNS_DIR / (row["timestamp"].replace(":", "-") + ".json")
+    with path.open("w", encoding="utf-8") as f:
+        json.dump({"row": row, "results": results}, f, ensure_ascii=False, indent=2)
+
+
 def run_and_log(use_self_correction: bool = False, config_description: str = "", subsets=DEFAULT_SUBSETS) -> dict:
     """Evaluate, measure possible leakage of training examples, and log the run."""
     load_dotenv(REPO_ROOT / ".env")
@@ -164,6 +175,7 @@ def run_and_log(use_self_correction: bool = False, config_description: str = "",
         "git_commit": _git_commit(),
     }
     _append_log_row(row)
+    _write_run_file(row, summary["results"])
     return row
 
 

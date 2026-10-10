@@ -1,6 +1,7 @@
 """Tests for evaluate: result comparison, the evaluation loop (with fakes) and the run log."""
 
 import csv
+import json
 from collections import Counter
 from types import SimpleNamespace
 
@@ -95,7 +96,8 @@ def world(monkeypatch):
 def add_case(world, n, gold=ONE, predicted=ONE, subset="core"):
     """Add case n: question "Qn", gold SQL "GOLDn", predicted SQL "PREDn"."""
     question, gold_sql, predicted_sql = f"Q{n}", f"GOLD{n}", f"PRED{n}"
-    world.cases.append({"question": question, "gold_sql": gold_sql, "subset": subset})
+    world.cases.append({"id": f"C{n}", "kind": "other", "subset": subset,
+                       "question": question, "gold_sql": gold_sql})
     world.predicted[question] = predicted_sql
     world.outcomes[gold_sql] = gold
     world.outcomes[predicted_sql] = predicted
@@ -213,6 +215,14 @@ def test_evaluate_runs_only_the_default_subsets(world):
     assert [r["question"] for r in summary["results"]] == ["Q1", "Q2"]
 
 
+def test_results_carry_the_case_id_kind_and_subset(world):
+    add_case(world, 1, subset="dev")
+
+    result = ev.evaluate()["results"][0]
+
+    assert (result["id"], result["kind"], result["subset"]) == ("C1", "other", "dev")
+
+
 def test_evaluate_can_run_the_heldout_subset_alone(world):
     add_case(world, 1, subset="core")
     add_case(world, 2, subset="heldout")
@@ -323,12 +333,16 @@ def logged(monkeypatch, tmp_path):
     """run_and_log with a fake evaluate, fake similarities and a log file in a temp folder."""
     log = SimpleNamespace(
         path=tmp_path / "results" / "eval_log.csv",
-        summary={"n_cases": 4, "n_correct": 3, "accuracy": 0.75, "n_exec_errors": 1, "results": []},
+        summary={"n_cases": 4, "n_correct": 3, "accuracy": 0.75, "n_exec_errors": 1,
+                 "results": [{"id": f"C{i}", "kind": "other", "subset": "core", "question": f"Q{i}",
+                              "correct": i != 0, "error": None, "sql": "SELECT 1", "attempts": 1}
+                             for i in range(4)]},
         similarities={},
     )
     monkeypatch.setenv("OLLAMA_SQL_MODEL", "test-model")
     monkeypatch.setattr(ev, "LOG_PATH", log.path)
     monkeypatch.setattr(ev, "EVAL_CASES", [{"question": f"Q{i}", "gold_sql": "", "subset": "core"} for i in range(4)])
+    monkeypatch.setattr(ev, "RUNS_DIR", tmp_path / "results" / "runs")
     monkeypatch.setattr(ev, "evaluate", lambda use_self_correction=False, subsets=ev.DEFAULT_SUBSETS: log.summary)
     monkeypatch.setattr(ev, "_git_commit", lambda: "abc1234")
     monkeypatch.setattr(ev, "nearest_example_similarity", lambda q: log.similarities.get(q, 0.5))
@@ -429,3 +443,19 @@ def test_git_commit_is_unknown_when_git_fails(monkeypatch):
         raise FileNotFoundError("git")
     monkeypatch.setattr(ev.subprocess, "run", boom)
     assert ev._git_commit() == "unknown"
+
+
+def test_run_and_log_saves_one_file_per_run_named_after_the_timestamp(logged):
+    row = ev.run_and_log(False, "first")
+
+    files = list(ev.RUNS_DIR.glob("*.json"))
+    assert [f.name for f in files] == [row["timestamp"].replace(":", "-") + ".json"]
+
+
+def test_the_run_file_holds_the_log_row_and_every_case(logged):
+    row = ev.run_and_log(False, "first")
+
+    saved = json.loads(next(ev.RUNS_DIR.glob("*.json")).read_text(encoding="utf-8"))
+    assert saved["row"] == json.loads(json.dumps(row))
+    assert [r["id"] for r in saved["results"]] == ["C0", "C1", "C2", "C3"]
+    assert saved["results"][0]["correct"] is False
