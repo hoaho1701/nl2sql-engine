@@ -10,7 +10,7 @@
 - A defense-in-depth SQL safety layer (statement validation, multi-statement rejection via `sqlparse`) — including a documented edge case where a data-modifying CTE (`WITH x AS (DELETE ... RETURNING *) SELECT * FROM x`) can't be caught by string-level checks alone
 - Prompt construction and a FastAPI backend skeleton (CORS, request/response models)
 
-27/27 unit tests passing. See [PROGRESS.md](./PROGRESS.md) for the full build log — architecture decisions, what's done, and what's next.
+The full README is coming at the end of the project.
 
 ## Data
 
